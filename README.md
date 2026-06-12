@@ -1,312 +1,314 @@
-# Flow Coding（川流编程）
+<p align="right"><strong>English</strong> | <a href="README_zh.md">中文</a></p>
 
-> 在 Vibe Coding 的基础上，闭合开发内循环的最后一公里。
+# Flow Coding
 
-Vibe Coding 让 AI 替你写代码。Flow Coding 让 AI 替你写代码，然后自动帮你打开浏览器、导航到正确页面、填入测试数据、截图比对——你只需要看结果，说"对"或"不对"。
+> Closing the last mile of the inner development loop, on top of Vibe Coding.
 
-你的注意力从未离开过意图层。这就是心流。
+Vibe Coding lets AI write code for you. Flow Coding lets AI write code for you, then automatically opens the browser, navigates to the right page, fills in test data, and compares screenshots — all you have to do is look at the result and say "correct" or "not correct."
 
----
-
-## 目录
-
-- [一、问题：Vibe Coding 的"最后一公里"](#一问题vibe-coding-的最后一公里)
-- [二、定义：什么是 Flow Coding](#二定义什么是-flow-coding)
-- [三、范式演进：三个阶段的开发内循环](#三范式演进三个阶段的开发内循环)
-- [四、核心原则](#四核心原则)
-- [五、技术栈](#五技术栈)
-- [六、实战示例](#六实战示例)
-- [七、适用边界](#七适用边界)
-- [八、FAQ](#八faq)
-- [九、相关概念](#九相关概念)
+Your attention never leaves the intent layer. This is flow.
 
 ---
 
-## 一、问题：Vibe Coding 的"最后一公里"
+## Table of Contents
 
-[Vibe Coding](https://karpathy.ai) （Andrej Karpathy, 2025）改变了代码生产方式：
-
-```
-传统：  思考 → 手写代码 → 运行 → 调试 → 重复
-Vibe：  描述意图 → AI 生成代码 → 运行 → 调试 → 重复
-```
-
-代码生产速度提升了 5-10 倍。但一个新的瓶颈浮现了：**验证环节仍然是手动的。**
-
-每次 AI 生成代码后，你仍然需要：
-
-1. 打开浏览器
-2. 登录测试账号
-3. 点击菜单导航到目标页面
-4. 填入测试数据
-5. 肉眼比对 UI 是否符合预期
-6. 切回对话窗口，告诉 AI 哪里不对
-
-这 6 步每天重复几十次。代码生产只要 3 秒，验证却要 30 秒。
-
-**心流在验证环节被打断。Flow Coding 解决的就是这个问题。**
+- [1. The Problem: Vibe Coding's "Last Mile"](#1-the-problem-vibe-codings-last-mile)
+- [2. Definition: What Is Flow Coding](#2-definition-what-is-flow-coding)
+- [3. Paradigm Evolution: Three Stages of the Inner Development Loop](#3-paradigm-evolution-three-stages-of-the-inner-development-loop)
+- [4. Core Principles](#4-core-principles)
+- [5. Tech Stack](#5-tech-stack)
+- [6. Hands-on Example](#6-hands-on-example-a-self-healing-loop-driven-by-a-ui-mockup)
+- [7. Applicability Boundaries](#7-applicability-boundaries)
+- [8. FAQ](#8-faq)
+- [9. Related Concepts](#9-related-concepts)
 
 ---
 
-## 二、定义：什么是 Flow Coding
+## 1. The Problem: Vibe Coding's "Last Mile"
 
-**Flow Coding（川流编程）** 是一种软件开发范式：在 Vibe Coding（AI 辅助代码生成）的基础上，通过浏览器自动化工具（如 Playwright）将验证环节也完全自动化，使开发者的注意力始终停留在「意图表达」与「判断」层面，不被任何中间操作打断，从而持续处于 Mihaly Csikszentmihalyi 所定义的心流状态（Flow State）。
-
-### 命名释义：为什么是「川流」
-
-「川流」比「心流」更贴合本范式的理念。它有两层含义：
-
-1. **过程之川**：开发不再是「写代码 → 停下来手动验证 → 再写」的断点式跳跃，而是「意图 → 生成 → 验证 → 修复」如河川般连续不断、奔流向前的过程——*川流不息*。
-2. **双源汇流**：生产端（Vibe Coding）与验证端（Dev Automation）两股自动化支流汇入同一条主干，形成端到端的闭合水系；正如《论语》「逝者如斯夫，不舍昼夜」，开发内循环持续流动、永不停滞。
-
-「心流（Flow State）」描述的是开发者的*心理状态*（结果），「川流」描述的是达成这一状态的*工作流形态*（手段）——以连续不断的自动化川流，承载并保持开发者的心流。
-
-### 公式
+[Vibe Coding](https://karpathy.ai) (Andrej Karpathy, 2025) changed how code is produced:
 
 ```
-Flow Coding = Vibe Coding（生产端自动化） + Dev Automation（验证端自动化）
+Traditional:  Think → Hand-write code → Run → Debug → Repeat
+Vibe:         Describe intent → AI generates code → Run → Debug → Repeat
 ```
 
-### 核心区别：反馈机制
+Code production sped up by 5-10x. But a new bottleneck emerged: **the verification step is still manual.**
 
-| 范式 | 反馈机制 | 验证范围 | 反馈速度 | 心流保持 |
-|------|----------|----------|----------|----------|
-| Vibe Coding | Unit Test | 单元级（函数/类） | 快（ms 级） | 部分保持（仍需手动 E2E 验证） |
-| Flow Coding | E2E Test | 端到端（完整用户流程） | 中（s 级） | 完全保持（验证全自动化） |
+Every time the AI generates code, you still have to:
 
-Vibe Coding 基于单元测试反馈：AI 生成代码 → 运行单元测试 → 根据断言失败调整 → 重复。反馈快速但范围有限，无法验证跨组件集成和真实用户场景。
+1. Open the browser
+2. Log into the test account
+3. Click through menus to navigate to the target page
+4. Fill in test data
+5. Eyeball whether the UI matches expectations
+6. Switch back to the chat window and tell the AI what's wrong
 
-Flow Coding 基于端到端测试反馈：AI 生成代码 → Playwright 自动导航到目标页面 → 填入真实数据 → 截图/断言比对 → 根据结果调整 → 重复。反馈稍慢但覆盖完整用户路径，验证的是"用户真正看到和体验到的"。
+These 6 steps repeat dozens of times a day. Code production takes 3 seconds; verification takes 30.
 
-### 开发者只需要做三件事
-
-| 步骤 | 你做什么 | 系统做什么 |
-|------|----------|------------|
-| 1. 表达意图 | 用自然语言描述需求 | AI 生成代码 |
-| 2. 触发验证 | 说"跑一下" | Playwright 自动导航、填表、截图、比对 |
-| 3. 判断 | 看截图/报告，说"对"或"这里不对" | 记录结果，等待下一轮意图图 |
-
-你从未离开对话窗口。你的手从未碰过鼠标去点测浏览器。
+**Flow is broken at the verification step. Flow Coding solves exactly this problem.**
 
 ---
 
-## 三、范式演进：三个阶段的开发内循环
+## 2. Definition: What Is Flow Coding
 
-**阶段一：传统开发 — 全链手动**
+**Flow Coding** is a software development paradigm: on top of Vibe Coding (AI-assisted code generation), it fully automates the verification step as well — using browser automation tools (such as Playwright) — so that the developer's attention always stays at the level of "expressing intent" and "judgment," uninterrupted by any intermediate operation, thereby continuously remaining in the Flow State as defined by Mihaly Csikszentmihalyi.
 
-```
-[手写代码] → [手动导航浏览器] → [肉眼验证] → [改代码]
-      慢                慢               慢              慢
-——注意力反复中断，每天有效编码 < 4h——
-```
+### Naming Rationale: Why "Flow"
 
-**阶段二：Vibe Coding — 只自动化了生产端**
+"Flow" (川流, "flowing river" in the original Chinese) fits this paradigm better than "Flow State (心流, the psychological state)." It carries two meanings:
 
-```
-[意图 → AI 生成代码] → [手动导航浏览器] → [肉眼验证] → [改 prompt]
-       快                    仍然慢            新瓶颈        慢
-——心流在此处被打断——
-```
+1. **The river of process**: Development is no longer a stop-and-go sequence of "write code → stop to verify manually → write again," but a continuous, ever-forward process of "intent → generation → verification → fix" that flows like a river — *flowing without ceasing*.
+2. **The confluence of two sources**: The production side (Vibe Coding) and the verification side (Dev Automation) — two automated tributaries — merge into a single mainstream, forming an end-to-end closed water system. As Confucius said by the river, "It flows on like this, never ceasing day or night"; the inner development loop keeps flowing, never stalling.
 
-**阶段三：Flow Coding — 生产 + 验证双端闭合**
+"Flow State" describes the developer's *psychological state* (the result); "flowing river" describes the *workflow form* (the means) that achieves it — using a continuous stream of automation to carry and sustain the developer's flow.
+
+### The Formula
 
 ```
-[意图 → AI 生成代码] → [Playwright 一键直达] → [自动截图/比对] → [改 prompt]
-       快                      快                      快               快
-——心流不中断，全天保持 Flow State——
+Flow Coding = Vibe Coding (production-side automation) + Dev Automation (verification-side automation)
+```
+
+### The Key Difference: The Feedback Mechanism
+
+| Paradigm | Feedback Mechanism | Verification Scope | Feedback Speed | Flow Preservation |
+|----------|--------------------|--------------------|----------------|-------------------|
+| Vibe Coding | Unit Test | Unit-level (function/class) | Fast (ms) | Partial (still needs manual E2E verification) |
+| Flow Coding | E2E Test | End-to-end (full user flow) | Medium (s) | Full (verification fully automated) |
+
+Vibe Coding is based on unit-test feedback: AI generates code → run unit tests → adjust based on assertion failures → repeat. Feedback is fast but limited in scope; it cannot verify cross-component integration or real user scenarios.
+
+Flow Coding is based on end-to-end test feedback: AI generates code → Playwright automatically navigates to the target page → fills in real data → compares via screenshots/assertions → adjusts based on the result → repeat. Feedback is slightly slower but covers the complete user path, verifying "what the user actually sees and experiences."
+
+### The Developer Only Does Three Things
+
+| Step | What You Do | What the System Does |
+|------|-------------|----------------------|
+| 1. Express intent | Describe the requirement in natural language | AI generates code |
+| 2. Trigger verification | Say "run it" | Playwright auto-navigates, fills forms, screenshots, compares |
+| 3. Judge | Look at the screenshot/report, say "correct" or "this part is wrong" | Records the result, waits for the next round of intent |
+
+You never leave the chat window. Your hand never touches the mouse to poke at a test browser.
+
+---
+
+## 3. Paradigm Evolution: Three Stages of the Inner Development Loop
+
+**Stage 1: Traditional Development — Fully Manual End-to-End**
+
+```
+[Hand-write code] → [Manually navigate browser] → [Eyeball verification] → [Change code]
+       slow                    slow                       slow                  slow
+——Attention repeatedly interrupted; effective coding < 4h/day——
+```
+
+**Stage 2: Vibe Coding — Only the Production Side Is Automated**
+
+```
+[Intent → AI generates code] → [Manually navigate browser] → [Eyeball verification] → [Change prompt]
+          fast                        still slow                  new bottleneck          slow
+——Flow is broken here——
+```
+
+**Stage 3: Flow Coding — Production + Verification Both Closed**
+
+```
+[Intent → AI generates code] → [Playwright one-click jump] → [Auto screenshot/compare] → [Change prompt]
+          fast                          fast                          fast                     fast
+——Flow uninterrupted; Flow State maintained all day——
 ```
 
 ---
 
-## 四、核心原则
+## 4. Core Principles
 
-### 原则 1：验证端自动化是 Vibe Coding 的天花板
+### Principle 1: Verification-Side Automation Is the Ceiling of Vibe Coding
 
-Vibe Coding 的核心风险是 AI 生成"看起来对但实际错"的代码。团队敢在多大范围内使用 vibe coding，取决于验证能力有多强。
+The core risk of Vibe Coding is the AI generating code that "looks right but is actually wrong." How broadly a team dares to use vibe coding depends on how strong its verification ability is.
 
-**验证越自动化，vibe coding 的安全边界越大。**
+**The more automated the verification, the larger the safe boundary of vibe coding.**
 
-### 原则 2：元自动化（Meta-Automation）
+### Principle 2: Meta-Automation
 
-在 Flow Coding 范式下，Playwright 脚本本身也可以被 vibe coded：
-
-```
-开发者："帮我写一个 Playwright 脚本：登录测试账号、进入库存页面、填入三条测试数据"
-AI：    → 生成 Playwright 脚本
-开发者："跑一下"
-系统：  → Playwright 执行该脚本 → 返回截图
-```
-
-这是用 AI 生成自动化脚本来自动化 AI 生成代码的验证过程——递归式提效。
-
-### 自愈闭环：验证结果直接回流 Coding Agent
-
-上例中"返回截图"的终点是开发者——开发者看截图、判断对不对、再告诉 AI。但元自动化的真正力量在于：验证结果不需要经过开发者，可以**直接回流到 Coding Agent，由 Agent 自主判断并修复问题**。
-
-**传统 Vibe Coding 循环（人在环路中判断）：**
+Under the Flow Coding paradigm, the Playwright script itself can also be vibe coded:
 
 ```
-开发者 —(意图)→ AI 生成代码 —(执行)→ 验证结果 —(截图)→ 开发者 —(判断)→ AI 修复
-                                                          ↑
-                                              ——注意力必须介入——
+Developer: "Write me a Playwright script: log into the test account, go to the inventory page, fill in three test records"
+AI:        → Generates the Playwright script
+Developer: "Run it"
+System:    → Playwright executes the script → returns screenshots
 ```
 
-**Flow Coding 自愈闭环（人只在起点和终点）：**
+This is using AI-generated automation scripts to automate the verification of AI-generated code — recursive productivity gains.
+
+### The Self-Healing Loop: Verification Results Flow Directly Back to the Coding Agent
+
+In the example above, the endpoint of "returns screenshots" is the developer — the developer looks at the screenshot, judges whether it's right, and tells the AI. But the real power of meta-automation is this: verification results don't need to pass through the developer; they can **flow directly back to the Coding Agent, which autonomously judges and fixes the problem.**
+
+**Traditional Vibe Coding loop (human-in-the-loop judgment):**
 
 ```
-开发者 —(意图)→ AI 生成代码 —(执行)→ 验证结果 —(截图/报错)→ AI 自主分析
-                                                                    ↓
-                                                          问题定位 → 代码修复 → 重新验证
-                                                                    ↓
-                                                              通过？
-                                                            否 ↙    ↘ 是
-                                                    继续修复循环    → 开发者 —(看最终结果)→ "OK"
+Developer —(intent)→ AI generates code —(run)→ verification result —(screenshot)→ Developer —(judge)→ AI fixes
+                                                                                       ↑
+                                                                       ——attention must intervene——
+```
+
+**Flow Coding self-healing loop (human only at start and end):**
+
+```
+Developer —(intent)→ AI generates code —(run)→ verification result —(screenshot/error)→ AI analyzes autonomously
+                                                                                              ↓
+                                                                  locate problem → fix code → re-verify
+                                                                                              ↓
+                                                                                          passed?
+                                                                                        no ↙    ↘ yes
+                                                                              continue fix loop    → Developer —(see final result)→ "OK"
            ↑
-——开发者注意力只在意图层和最终判断层——
+——developer's attention only at the intent layer and the final judgment layer——
 ```
 
-这意味着 Flow Coding 有两个运行模式：
+This means Flow Coding has two operating modes:
 
-| 模式 | 人参与环节 | 适用场景 | 循环速度 |
-|------|------------|----------|----------|
-| 人判断模式 | 每轮验证都需要开发者确认 | 低信任层（核心算法/安全路径） | 受限于人的响应速度 |
-| 自愈模式 | 仅起点意图 + 终点确认 | 高信任层（CRUD/UI/样板代码） | 仅受限于 Agent 推理速度 |
+| Mode | Human Involvement | Use Case | Loop Speed |
+|------|-------------------|----------|------------|
+| Human-judgment mode | Developer confirms every verification round | Low-trust layer (core algorithms / security paths) | Limited by human response speed |
+| Self-healing mode | Only the starting intent + final confirmation | High-trust layer (CRUD/UI/boilerplate) | Limited only by agent reasoning speed |
 
-在自愈模式中，Coding Agent 拿到 Playwright 截图后可以：
+In self-healing mode, after the Coding Agent gets the Playwright screenshot, it can:
 
-1. 视觉比对：与设计稿或上一轮截图做像素 diff，定位渲染偏差
-2. 报错解析：读取 console error / network error / assertion failure，定位根因
-3. 自主修复：根据 diff + 报错修改代码，重新触发验证
-4. 收敛判定：当截图与基线一致、断言全部通过时，向开发者报告"已完成"
+1. Visual comparison: pixel-diff against the design mockup or the previous round's screenshot to locate rendering deviations.
+2. Error parsing: read console error / network error / assertion failure to locate the root cause.
+3. Autonomous fixing: modify code based on diff + errors, then re-trigger verification.
+4. Convergence judgment: when the screenshot matches the baseline and all assertions pass, report "done" to the developer.
 
-开发者从"每轮都要'变成'只看最后一轮"——注意力守恒从"减少切换"升级为"消除中间轮次的注意力消耗"。
+The developer's attention shifts from "needing to confirm every round" to "only looking at the last round" — attention conservation upgrades from "reducing switches" to "eliminating the attention cost of intermediate rounds."
 
-#### 自愈的范围：端到端，而非只改前端
+#### Scope of Self-Healing: End-to-End, Not Just the Frontend
 
-自我修复**不限于修改前端代码**。Flow Coding 验证的是**端到端的产品功能完整性**，因此碰到问题时必须：
+Self-healing is **not limited to modifying frontend code**. Flow Coding verifies **end-to-end product feature integrity**, so when a problem is encountered it must:
 
-1. **先定位问题来源**：根据 console error / network error / 断言失败 / API 响应，判断根因在前端、后端、数据层还是接口契约。
-2. **在正确的位置修改**：前端、后端代码均可修改，遵循"最小上游修复优于下游绕过"，对症修复根因而非掩盖症状。
+1. **Locate the source first**: based on console error / network error / assertion failure / API response, decide whether the root cause lies in the frontend, backend, data layer, or API contract.
+2. **Fix at the correct location**: both frontend and backend code may be modified, following "minimal upstream fix over downstream workaround" — fix the root cause rather than mask the symptom.
 
-#### 自愈的边界：3 × 3 原则（防止无限迭代）
+#### Boundary of Self-Healing: The 3 × 3 Rule (Preventing Infinite Iteration)
 
-自愈循环**禁止无限制迭代**。采用 3 × 3 收敛策略：
+The self-healing loop **forbids unbounded iteration**. It uses a 3 × 3 convergence strategy:
 
-- **单方向最多 3 次**：沿同一修复方向（同一根因假设）最多迭代尝试 3 次修正。
-- **方向最多切换 3 次**：若一个方向 3 次仍未解决，判定该假设错误，切换到新方向（新的根因假设）；方向切换最多 3 次。
-- **触顶即停、回报开发者**：达到 3 × 3 上限（最多 9 次尝试）仍未收敛时，停止自动循环，汇总各方向的尝试与失败证据，交回开发者判断。
-
-```
-方向 A：尝试 1 → 尝试 2 → 尝试 3   (未解决，切换方向)
-方向 B：尝试 1 → 尝试 2 → 尝试 3   (未解决，切换方向)
-方向 C：尝试 1 → 尝试 2 → 尝试 3   (仍未解决 → 停止，回报开发者)
-```
-
-这保证自愈在高信任层高效收敛的同时，不会陷入无意义的"反复试错"消耗。
-
-### 原则 3：注意力守恒
-
-开发者的注意力是稀缺资源。每一次从"对话窗口"切到"浏览器"再切回来，都有 ~15 秒的上下文切换成本（认知心理学中称为 Attention Residue，Sophie Leroy, 2009）。Flow Coding 的目标是将切换次数降到零。
-
-这个原则不只是时间管理格言——它有坚实的神经科学基础。
-
-#### 前额叶皮层：注意力的指挥中心
-
-**前额叶皮层（Prefrontal Cortex, PFC）** 是大脑执行控制系统的核心，负责三项关键功能：
-
-| PFC 功能 | 在开发中的表现 | 多任务切换时的消耗 |
-|----------|----------------|-------------------|
-| 工作记忆（Dorsolateral PFC） | 保持当前函数的上下文、变量依赖链、调用栈 | 每次切换需清空并重建工作记忆内容 |
-| 抑制控制（Right Inferior PFC） | 抑制无关思路，聚焦当前意图 | 切换后需重新抑制上一个任务的残留思维 |
-| 任务集重构（Medial PFC / ACC） | 从"写代码"模式切换到"验证 UI"模式 | 需要加载全新的规则集和目标层级 |
-
-PFC 的代谢特性决定了它是最"昂贵"的脑区：它依赖慢速的谷氨酸能信号传递，葡萄糖消耗率是运动皮层的 2-3 倍。这意味着 PFC 的资源是硬性有限的——不是"努力一下就能多分配"，而是存在生理天花板。
-
-#### 多任务切换：功能性前额叶损伤
-
-神经科学中有一个令人警醒的发现：**频繁任务切换对前额叶的影响，类似于轻度前额叶损伤。**
-
-| 前额叶损伤患者的典型症状 | 与频繁多任务切换者的认知表现对比 |
-|--------------------------|----------------------------------|
-| ✗ 工作记忆容量下降 | ← 切换后需上文，失去"涌流"当进任务 |
-| ✗ 抑制无关刺激的能力减弱 | ← Attention Residue：上一个任务的思维"滞留"进当前任务 |
-| ✗ 任务启动延迟增加 | ← 每次切换有 200-500ms 的"任务集重构"延迟（Rubinstein et al., 2001） |
-| ✗ 错误率上升 | ← 规则混淆：把 A 任务的假设带入 B 任务 |
-| ✗ 时间估计失真 | ← 主观感觉"只看一眼"实际花了 45 秒 |
-
-这不是比喻。Rubinstein, Meyer & Evans（2001）的经典实验明，即使是在受控实验室中做简单的分类任务切换，被试的反应时间增加了 200-500ms，错误率也——而这些被试的前额叶完全健康。多任务切换让健康大脑暂时表现出损伤大脑的特征。
-
-对开发者而言，这种"功能性损伤"的后果更严重，因为软件开发对工作记忆和抑制控制的要求远高于实验室分类任务：你需要同时保持 5-10 个变量的依赖关系、一个隐式状态机、以及"用户期望什么行为"的意图——这全部驻留在 PFC 的工作记忆中。每次切换，全部清空。
-
-#### 为什么"只看一眼"不是零成本
-
-开发者常有一种错觉：切到浏览器"只看一眼"只需要 2 秒。但认知科学的数据告诉我们：
-
-**"只看一眼"的真实成本分解**
+- **Max 3 attempts per direction**: along the same fix direction (same root-cause hypothesis), iterate at most 3 corrective attempts.
+- **Max 3 direction switches**: if one direction still fails after 3 attempts, the hypothesis is judged wrong — switch to a new direction (new root-cause hypothesis); at most 3 direction switches.
+- **Stop at the ceiling and report back**: when the 3 × 3 limit (max 9 attempts) is reached without convergence, halt the auto loop, summarize each direction's attempts and failure evidence, and hand back to the developer.
 
 ```
-0.0s   按下 Alt+Tab
-0.2s   视觉适应浏览器画面
-0.3s   PFC 开始加载"验证模式"的任务集
-0.3s   Attention Residue 编码上文仍在活跃，占用工作记忆位置
-5-30s  处理验证信息（看 UI / 读报错）
-0.5s   切回 IDE
-0.3s   PFC 重新加载"编码模式"任务集
-——10-15s 脑网络上下文重建，脑才在次调用多少变量？变量叫什么？——
-
-总计：30-78 秒的认知开销，其中大部分是无意识的
+Direction A: attempt 1 → attempt 2 → attempt 3   (unresolved, switch direction)
+Direction B: attempt 1 → attempt 2 → attempt 3   (unresolved, switch direction)
+Direction C: attempt 1 → attempt 2 → attempt 3   (still unresolved → stop, report to developer)
 ```
 
-关键洞察：**触发切换动作本身（不超过 0.5 秒），而是 PFC 任务集的卸载与重装——就像重启一个加载了 10GB 数据的服务器，重启只要 30 秒，但重新加载数据要 5 分钟。**
+This ensures self-healing converges efficiently at the high-trust layer while not falling into pointless "repeated trial and error."
 
-#### Flow Coding 的神经科学论证
+### Principle 3: Attention Conservation
+
+A developer's attention is a scarce resource. Every switch from "chat window" to "browser" and back carries a ~15-second context-switching cost (called Attention Residue in cognitive psychology, Sophie Leroy, 2009). The goal of Flow Coding is to drive the number of switches to zero.
+
+This principle is not just a time-management slogan — it has a solid neuroscientific basis.
+
+#### The Prefrontal Cortex: The Command Center of Attention
+
+The **Prefrontal Cortex (PFC)** is the core of the brain's executive control system, responsible for three key functions:
+
+| PFC Function | Manifestation in Development | Cost on Multitask Switching |
+|--------------|------------------------------|------------------------------|
+| Working memory (Dorsolateral PFC) | Holding the current function's context, variable dependency chain, call stack | Each switch must clear and rebuild working-memory content |
+| Inhibitory control (Right Inferior PFC) | Suppressing irrelevant thoughts, focusing on the current intent | After switching, must re-suppress residual thoughts from the previous task |
+| Task-set reconfiguration (Medial PFC / ACC) | Switching from "write code" mode to "verify UI" mode | Must load an entirely new rule set and goal hierarchy |
+
+The metabolic characteristics of the PFC make it the most "expensive" brain region: it relies on slow glutamatergic signaling, and its glucose consumption rate is 2-3x that of the motor cortex. This means the PFC's resources are hard-limited — not "allocate more if you just try harder," but a physiological ceiling.
+
+#### Multitask Switching: Functional Prefrontal Impairment
+
+Neuroscience holds a sobering finding: **the impact of frequent task switching on the prefrontal cortex resembles mild prefrontal impairment.**
+
+| Typical Symptoms of Prefrontal-Damage Patients | Cognitive Performance of Frequent Multitaskers |
+|------------------------------------------------|------------------------------------------------|
+| ✗ Reduced working-memory capacity | ← After switching, must reload context, losing the "flowing" task state |
+| ✗ Weakened ability to inhibit irrelevant stimuli | ← Attention Residue: the previous task's thoughts "linger" into the current one |
+| ✗ Increased task-startup latency | ← Each switch incurs a 200-500ms "task-set reconfiguration" delay (Rubinstein et al., 2001) |
+| ✗ Rising error rates | ← Rule confusion: carrying task A's assumptions into task B |
+| ✗ Distorted time estimation | ← Subjectively feels like "just a glance" but actually took 45 seconds |
+
+This is not a metaphor. The classic experiment by Rubinstein, Meyer & Evans (2001) showed that even in a controlled lab doing simple classification-task switching, subjects' reaction times increased by 200-500ms and error rates rose — and these subjects' prefrontal cortices were perfectly healthy. Multitask switching makes a healthy brain temporarily exhibit the characteristics of a damaged one.
+
+For developers, the consequences of this "functional impairment" are more severe, because software development demands far more of working memory and inhibitory control than a lab classification task: you must simultaneously hold the dependencies of 5-10 variables, an implicit state machine, and the intent of "what behavior the user expects" — all residing in PFC working memory. Every switch clears it all.
+
+#### Why "Just a Glance" Is Not Zero-Cost
+
+Developers often have an illusion: switching to the browser "just for a glance" takes only 2 seconds. But cognitive science data tells us otherwise:
+
+**Breaking Down the Real Cost of "Just a Glance"**
 
 ```
-传统开发（频繁切换）：
-PFC 状态：[编码模式] → [加载] → [验证模式] → [加载] → [编码模式] → [加载] → ...
-工作记忆：加载 → 清空 → 重建 → 清空 → 重建 → ...
-总注意力消耗：高（持续的前额叶损耗）
+0.0s   Press Alt+Tab
+0.2s   Visual adaptation to the browser screen
+0.3s   PFC begins loading the "verification mode" task set
+0.3s   Attention Residue: the prior context is still active, occupying working-memory slots
+5-30s  Process verification information (look at UI / read errors)
+0.5s   Switch back to the IDE
+0.3s   PFC reloads the "coding mode" task set
+——10-15s of brain-network context rebuilding: which variables was I just using? what were they called?——
 
-Flow Coding（零切换）：
-PFC 状态：[编码模式] ——持续 → 持续 → ...（只需一次，直到任务完成）
-工作记忆：加载一次，持续使用（积累，而非反复清空）
-总注意力消耗：低（只有意图层和最终判断层）
+Total: 30-78 seconds of cognitive overhead, most of it unconscious
+```
+
+Key insight: **the cost is not the switching action itself (under 0.5s), but the unloading and reloading of the PFC task set — like restarting a server that loaded 10GB of data: the restart takes 30 seconds, but reloading the data takes 5 minutes.**
+
+#### The Neuroscientific Argument for Flow Coding
+
+```
+Traditional development (frequent switching):
+PFC state:     [coding mode] → [load] → [verify mode] → [load] → [coding mode] → [load] → ...
+Working memory: load → clear → rebuild → clear → rebuild → ...
+Total attention cost: high (continuous prefrontal drain)
+
+Flow Coding (zero switching):
+PFC state:     [coding mode] ——sustained → sustained → ... (only once, until the task is done)
+Working memory: load once, use continuously (accumulating, not repeatedly clearing)
+Total attention cost: low (only the intent layer and the final judgment layer)
 ```
 
 ---
 
-## 五、技术栈
+## 5. Tech Stack
 
-Flow Coding 不依赖特定工具，但以下是当前最成熟的组合：
+Flow Coding does not depend on any specific tool, but the following is the most mature combination today:
 
-### 生产端（Vibe Coding）
+### Production Side (Vibe Coding)
 
-| 组件 | 推荐工具 | 说明 |
-|------|----------|------|
-| AI 代码生成 | Windsurf Cascade / Cursor / GitHub Copilot | IDE 内对话式代码生成 |
-| 上下文管理 | 项目级 Rules / AGENTS.md | 让 AI 理解项目约定 |
-| Prompt 资产 | 团队 Prompt Library（Wiki / Git） | 沉淀高效 prompt 模板 |
+| Component | Recommended Tool | Notes |
+|-----------|------------------|-------|
+| AI code generation | Windsurf Cascade / Cursor / GitHub Copilot | In-IDE conversational code generation |
+| Context management | Project-level Rules / AGENTS.md | Let the AI understand project conventions |
+| Prompt assets | Team Prompt Library (Wiki / Git) | Accumulate efficient prompt templates |
 
-### 验证端（Dev Automation）
+### Verification Side (Dev Automation)
 
-| 组件 | 推荐工具 | 说明 |
-|------|----------|------|
-| 浏览器自动化 | Playwright（Python / Node） | 跨浏览器、Auto-wait、多 Context 隔离 |
-| 状态直达 | Playwright 脚本 + Mock Token | 一键到达待验证页面状态 |
-| 视觉回归 | `page.screenshot()` + pixelmatch | 像素级 UI 比对 |
-| E2E 断言 | Playwright Test Assertions | 功能性正确性验证 |
-| 组件隔离 | Playwright Component Testing | 无需后端的轻量 UI 验证 |
+| Component | Recommended Tool | Notes |
+|-----------|------------------|-------|
+| Browser automation | Playwright (Python / Node) | Cross-browser, auto-wait, multi-context isolation |
+| State jump | Playwright script + Mock Token | One-click jump to the page state to be verified |
+| Visual regression | `page.screenshot()` + pixelmatch | Pixel-level UI comparison |
+| E2E assertions | Playwright Test Assertions | Functional correctness verification |
+| Component isolation | Playwright Component Testing | Lightweight UI verification without a backend |
 
-### 连接层
+### Connection Layer
 
-| 组件 | 实现方式 | 说明 |
-|------|----------|------|
-| 一键触发 | IDE Task / npm script / Makefile | 开发者在对话窗口说"跑一下"即可触发 |
-| 结果回传 | 截图文件 + JSON 报告 | AI 可读取截图和报告，进入下一轮迭代 |
+| Component | Implementation | Notes |
+|-----------|----------------|-------|
+| One-click trigger | IDE Task / npm script / Makefile | The developer triggers it just by saying "run it" in the chat window |
+| Result return | Screenshot files + JSON report | The AI can read screenshots and reports to enter the next iteration |
 
-### 可复用模板：Playwright（TS）验证端脚手架
+### Reusable Template: Playwright (TS) Verification-Side Scaffold
 
-以下为开箱即用的 Playwright TS 模板，约定：**验证端只用 Playwright TS 脚本，不写任何 Python 测试脚本**，统一分辨率 1920×1080。将两个文件放入独立的 `test/e2e/` 目录即可作为一个自包含的验证工程。
+Below is an out-of-the-box Playwright TS template. Convention: **the verification side uses only Playwright TS scripts, with no Python test scripts**, at a uniform resolution of 1920×1080. Place the two files in a standalone `test/e2e/` directory to form a self-contained verification project.
 
 **`test/e2e/package.json`**
 
@@ -360,253 +362,253 @@ export default defineConfig({
 });
 ```
 
-**初始化与运行**
+**Initialization and Running**
 
 ```bash
 cd test/e2e
 npm install
 npx playwright install chromium
-npx playwright test               # 运行全部 spec
-npx playwright test <spec>.spec.ts  # 运行单个 spec
+npx playwright test               # run all specs
+npx playwright test <spec>.spec.ts  # run a single spec
 ```
 
-**模板约定**
+**Template Conventions**
 
-- **只用 TS**：所有验证逻辑（含 API 断言）都写在 `*.spec.ts` 中，通过 `page.request` 直接调用后端，无需 Python 脚本。
-- **固定分辨率**：viewport 统一 1920×1080，保证截图基线在不同机器上可复现。
-- **自愈友好**：`retries: 1` + `trace/video/screenshot` 便于 AI 读取失败上下文并自动修复。
-- **可视确认**：`headless: false` + `slowMo` 便于人在终点判断。
+- **TS only**: all verification logic (including API assertions) is written in `*.spec.ts`, calling the backend directly via `page.request`, with no Python scripts.
+- **Fixed resolution**: viewport unified at 1920×1080 to ensure the screenshot baseline is reproducible across machines.
+- **Self-healing friendly**: `retries: 1` + `trace/video/screenshot` make it easy for the AI to read failure context and auto-fix.
+- **Visual confirmation**: `headless: false` + `slowMo` make it easy for the human to judge at the endpoint.
 
 ---
 
-## 六、实战示例：UI Mockup 驱动的自愈闭环
+## 6. Hands-on Example: A Self-Healing Loop Driven by a UI Mockup
 
-一个完整示例，串联原则 1-4：验证端自动化（原则 1）、元自动化 + 自愈闭环（原则 2）、注意力守恒（原则 3）、分层信任（原则 4）。
+A complete example that ties together Principles 1-4: verification-side automation (Principle 1), meta-automation + self-healing loop (Principle 2), attention conservation (Principle 3), and layered trust (Principle 4).
 
-场景：SCM 库存告警板页面——从 UI 设计精到代码实现的全自动闭环。
+Scenario: an SCM inventory-alert dashboard page — a fully automated loop from UI design mockup to code implementation.
 
-### Step 1：设计 UI Mockup
+### Step 1: Design the UI Mockup
 
-开发者在对话窗口上传一张 Figma 截图或手绘线框图：
-
-```
-开发者：[上传 inventory_alerts_mockup.png]
-        "这是库存告警板的设计稿，帮我实现 /inventory/alerts 页面。"
-```
-
-开发者只做了一件事：表达意图 + 提供视觉锚点。此后进入自愈闭环，开发者注意力不再介入。
-
-### Step 2：AI 理解 Mockup → 对比现状 → 生成改进计划
+The developer uploads a Figma screenshot or hand-drawn wireframe in the chat window:
 
 ```
-AI：  → 读取 mockup 截图，解析布局结构：
-        - 顶部：SKU 表格（缺货行红色高亮）
-        - 底部：导出 CSV 按钮
-      → Playwright 截取 /inventory/alerts 页面截图
-      → 逐区对比 mockup vs 现状，生成差异清单
+Developer: [uploads inventory_alerts_mockup.png]
+           "This is the design mockup for the inventory-alert dashboard. Implement the /inventory/alerts page."
 ```
 
-**差异报告**
+The developer did only one thing: express intent + provide a visual anchor. From here the self-healing loop begins, and the developer's attention no longer intervenes.
+
+### Step 2: AI Understands the Mockup → Compares with the Current State → Generates an Improvement Plan
 
 ```
-1. 筛选器：mockup 在表格上方，现状在左侧边栏
-2. 缺货高亮：mockup 用 #FF4444 浅红，现状用 #BB0000
-3. 导出按钮：mockup 有，现状缺失
-4. 表格列顺序：mockup [SKU|库存|安全线|状态]
-               现状 [SKU|库存|仓库|状态]
+AI:   → Read the mockup screenshot, parse the layout structure:
+        - Top: SKU table (out-of-stock rows highlighted red)
+        - Bottom: Export CSV button
+      → Playwright captures a screenshot of the /inventory/alerts page
+      → Compare mockup vs. current state region by region, generate a diff list
 ```
 
-→ 输出改进计划（4 项修改，按依赖排序）
-
-### Step 3：AI 生成 E2E Playwright 验证脚本
-
-AI 基于 mockup 生成 Playwright 脚本——这是元自动化（原则 2）：用 AI 写验证脚本来自动化 AI 生成代码的验证。
+**Diff Report**
 
 ```
-AI：  → 生成 Playwright E2E 脚本 inventory_alerts_e2e.spec.ts：
-        - 导航到 /inventory/alerts
-        - 注入 mock 数据（3 台库存，20 SKU，5 缺货）
-        - 断言筛选器位置（表格上方）
-        - 断言缺货行背景色 = #FF4444
-        - 断言导出 CSV 按钮存在且可点击
-        - 断言表格列顺序
-        - 截图保存为验证基准
+1. Filter: mockup places it above the table; current state in the left sidebar
+2. Out-of-stock highlight: mockup uses #FF4444 light red; current uses #BB0000
+3. Export button: mockup has it; current state is missing it
+4. Table column order: mockup [SKU|Stock|Safety Line|Status]
+                       current [SKU|Stock|Warehouse|Status]
 ```
 
-### 实战示例 2：非浏览器 UI 的视觉自愈（以 PPT 生成为例）
+→ Output an improvement plan (4 changes, ordered by dependency)
 
-Flow Coding 不局限于 Web 开发。在处理文档生成（如 PPTX/PDF）等不可见 UI 任务时，通过“截图自检”依然可以闭合心流。
+### Step 3: AI Generates the E2E Playwright Verification Script
 
-**场景**：根据视频内容自动化生成 24 节气手绘风 PPT，并确保插画比例饱满。
-
-**流程**：
-1. **意图表达**：开发者要求将视频转换为 PPT，要求保持原始 UI 的手绘组件风格。
-2. **生产端**：AI 使用 `python-pptx` 绘制几何图形（牛、人、云、树）。
-3. **验证端自动化（核心步）**：AI 编写 `pptx_preview_spire.py` 调用组件库，自动将生成的 PPT 每一页渲染为 PNG 图片。
-4. **视觉分析**：AI 通过 `read_file` 读取这些图片，利用视觉能力发现“文字溢出”、“组件比例过小”等排版问题。
-5. **自愈循环**：
-    - **发现**：Slide 1 的“惊蛰”标题离边缘太近，牛的比例太小。
-    - **修复**：自动修改代码中的 `scale` 参数和 `top_pad` 偏移量。
-    - **再验证**：重新生成 PPT → 重新截图 → 确认比例完美。
-
-**价值**：开发者不需要反复“生成 -> 找到文件夹 -> 打开 PPT -> 翻页肉眼看 -> 关掉 -> 改代码”，注意力始终停留在 IDE 的意图层。
-
-### Step 4：自愈闭环——AI 修改代码 → 执行脚本 → 读取反馈 → 修正 → 循环
+The AI generates a Playwright script based on the mockup — this is meta-automation (Principle 2): using AI to write the verification script that automates the verification of AI-generated code.
 
 ```
-——自愈闭环启动——
-
-迭代 1：
-AI → 修改组件代码（4 项改进并行全部实施）
-系统 → 执行 Playwright E2E 脚本
-结果 → 2 通过 / 2 失败
-  ✗ 筛选器位置偏左（CSS flex 未生效）
-  ✗ 缺货颜色 #FF4444 显示为 #FF3333
-    （测试颜色空间转换导错误）
-AI → 读取 console log + 截图 + 断言失败信息
-
-迭代 2：
-AI → 修复 CSS flex 布局 + 调整颜色为 sRGB 安全值
-系统 → 重新执行 Playwright E2E 脚本
-结果 → 4 通过 / 0 失败
-截图 → 与 mockup 像素 diff < 2%（可接受阈值）
-
-✅ 自愈闭环完成，向开发者报告
-
-——自愈闭环结束——
-
-开发者：（看最终截图 + diff 报告）"OK，上线。"
+AI:   → Generate the Playwright E2E script inventory_alerts_e2e.spec.ts:
+        - Navigate to /inventory/alerts
+        - Inject mock data (3 warehouses, 20 SKUs, 5 out of stock)
+        - Assert the filter position (above the table)
+        - Assert out-of-stock row background color = #FF4444
+        - Assert the Export CSV button exists and is clickable
+        - Assert the table column order
+        - Save the screenshot as the verification baseline
 ```
 
-### 全流程注意力消耗分析
+### Hands-on Example 2: Visual Self-Healing for Non-Browser UI (PPT Generation)
+
+Flow Coding is not limited to web development. When handling document-generation tasks (such as PPTX/PDF) with invisible UI, the flow can still be closed via "screenshot self-inspection."
+
+**Scenario**: Automatically generate a hand-drawn-style PPT of the 24 solar terms from video content, ensuring the illustrations are full and well-proportioned.
+
+**Process**:
+1. **Intent expression**: The developer asks to convert a video into a PPT, requiring the original UI's hand-drawn component style to be preserved.
+2. **Production side**: The AI uses `python-pptx` to draw geometric shapes (cow, person, cloud, tree).
+3. **Verification-side automation (core step)**: The AI writes `pptx_preview_spire.py`, which calls a component library to automatically render every page of the generated PPT into a PNG image.
+4. **Visual analysis**: The AI reads these images via `read_file` and uses its visual ability to spot layout problems like "text overflow" and "components too small."
+5. **Self-healing loop**:
+    - **Discover**: The "Jingzhe" title on Slide 1 is too close to the edge, and the cow is too small.
+    - **Fix**: Automatically modify the `scale` parameter and `top_pad` offset in the code.
+    - **Re-verify**: Regenerate the PPT → re-screenshot → confirm the proportions are perfect.
+
+**Value**: The developer doesn't need to repeatedly "generate → find the folder → open the PPT → flip through pages by eye → close → change code." Attention always stays at the intent layer in the IDE.
+
+### Step 4: The Self-Healing Loop — AI Modifies Code → Runs the Script → Reads Feedback → Corrects → Loops
 
 ```
-传统开发（手动验证）：
-开发者参与环节：写代码 → 打开浏览器 → 导航 → 肉眼比对 → 切回 IDE → 改代码 → 重复
-注意力切换次数：~10 次（每个修改点 2 次切换）
-总注意力消耗：~10 × 45s = 7.5 分钟
+——Self-healing loop starts——
 
-Flow Coding（自愈闭环）：
-开发者参与环节：上传 mockup + 说"帮我实现" → 最终报告说"OK"
-注意力切换次数：0
-总注意力消耗：~30 秒（仅起意图层 + 终点判断）
+Iteration 1:
+AI → Modify component code (all 4 improvements implemented in parallel)
+System → Execute the Playwright E2E script
+Result → 2 pass / 2 fail
+  ✗ Filter positioned too far left (CSS flex not taking effect)
+  ✗ Out-of-stock color #FF4444 displays as #FF3333
+    (color-space conversion error in the test)
+AI → Read console log + screenshot + assertion-failure info
 
-注意力节省：93%
+Iteration 2:
+AI → Fix CSS flex layout + adjust color to an sRGB-safe value
+System → Re-execute the Playwright E2E script
+Result → 4 pass / 0 fail
+Screenshot → pixel diff against the mockup < 2% (acceptable threshold)
+
+✅ Self-healing loop complete, report to the developer
+
+——Self-healing loop ends——
+
+Developer: (looks at the final screenshot + diff report) "OK, ship it."
 ```
 
-### 原则回溯
+### Full-Flow Attention Cost Analysis
 
-| 原则 | 在本示例中的体现 |
-|------|-----------------|
-| 原则 1：验证端自动化 | Playwright E2E 脚本替代了手动导航 + 肉眼比对 |
-| 原则 2：元自动化 + 自愈 | AI 生成验证脚本回流 AI，无需开发者介入中间轮次 |
-| 原则 3：注意力守恒 | 开发者只参与起点和终点，中间 2 轮自愈循环零注意力消耗 |
-| 原则 4：分层信任 | 库存告警属高信任层（CRUD + UI），允许全自动化；若涉及权限逻辑则通过触发提醒 |
+```
+Traditional development (manual verification):
+Developer-involved steps: write code → open browser → navigate → eyeball compare → switch back to IDE → change code → repeat
+Number of attention switches: ~10 (2 switches per change point)
+Total attention cost: ~10 × 45s = 7.5 minutes
+
+Flow Coding (self-healing loop):
+Developer-involved steps: upload mockup + say "implement it" → final report says "OK"
+Number of attention switches: 0
+Total attention cost: ~30 seconds (only the starting intent layer + the final judgment)
+
+Attention saved: 93%
+```
+
+### Principle Traceback
+
+| Principle | How It Appears in This Example |
+|-----------|-------------------------------|
+| Principle 1: Verification-side automation | The Playwright E2E script replaces manual navigation + eyeball comparison |
+| Principle 2: Meta-automation + self-healing | The AI generates the verification script that flows back to the AI, with no developer intervention in intermediate rounds |
+| Principle 3: Attention conservation | The developer participates only at the start and end; the 2 intermediate self-healing rounds cost zero attention |
+| Principle 4: Layered trust | Inventory alerts belong to the high-trust layer (CRUD + UI), allowing full automation; if permission logic were involved, it would trigger a prompt |
 
 ---
 
-## 七、适用边界
+## 7. Applicability Boundaries
 
-（待补充）
-
----
-
-## 八、FAQ
-
-（待补充）
+(To be added)
 
 ---
 
-## 九、相关概念
+## 8. FAQ
 
-（待补充）
+(To be added)
 
 ---
 
-## 十、三重反馈（Triple Feedback）：前端 + 后端 + Playwright
+## 9. Related Concepts
 
-Flow Coding 的自愈闭环之所以能可靠收敛，根本在于 AI 拿到的不是单一信号，而是**三路相互独立、可交叉验证的实时反馈**。
+(To be added)
 
-### 为什么单一反馈不够
+---
 
-只看 Playwright 截图/断言，只能知道"结果不对"，却不知道"为什么不对"：
+## 10. Triple Feedback: Frontend + Backend + Playwright
 
-```
-只有 Playwright：
-断言失败：页面显示 "0 skills"
-  → 是前端没渲染？还是后端返回空？还是请求压根没发出？
-  → 无从判断，只能猜 → 陷入"反复试错"
-```
+The reason Flow Coding's self-healing loop can converge reliably is fundamentally that the AI receives not a single signal, but **three mutually independent, cross-verifiable real-time feedback streams**.
 
-这正是注意力守恒（原则 3）与 3 × 3 收敛（原则 2）的天敌：**信息不足导致方向假设错误，浪费迭代预算。**
+### Why a Single Feedback Stream Is Not Enough
 
-### 三路反馈的分工
-
-| 反馈源 | 信号载体 | 回答的问题 | 观测层 |
-|--------|----------|------------|--------|
-| ① 行为反馈 | Playwright 截图 + 断言 | 用户**看到/体验到**什么？ | 表现层（端到端结果） |
-| ② 前端反馈 | `logs/ui.log`（前端 stdout + 请求状态码 + SSR 报错） | 前端**做了**什么、请求**发出**了吗？ | 前端运行层 |
-| ③ 后端反馈 | `logs/server.log` + `logs/access.log`（应用日志 + 服务器 + 每个 HTTP 请求） | 后端**收到**请求了吗、**返回**了什么、**报错**了吗？ | 后端运行层 |
-
-三者覆盖了一次用户操作的**完整因果链**：
+Looking only at Playwright screenshots/assertions tells you "the result is wrong" but not "why it's wrong":
 
 ```
-用户操作 → [②前端发出请求] → [③后端处理并响应] → [②前端接收并渲染] → [①用户看到结果]
-            ui.log              access.log/server.log    ui.log              Playwright 截图
+With only Playwright:
+Assertion failed: page shows "0 skills"
+  → Did the frontend not render? Did the backend return empty? Or was the request never sent?
+  → No way to tell — can only guess → falling into "repeated trial and error"
 ```
 
-### 三角定位（Triangulation）：交叉验证锁定根因
+This is the enemy of attention conservation (Principle 3) and 3 × 3 convergence (Principle 2): **insufficient information leads to wrong directional hypotheses, wasting the iteration budget.**
 
-三路信号同时实时可读（`tail -f`）时，AI 不再"猜方向"，而是**交叉比对**直接锁定根因层级：
+### The Division of Labor Among the Three Feedback Streams
 
-```
-现象（①）：Playwright 断言失败 — 页面显示 "0 skills"
+| Feedback Source | Signal Carrier | Question It Answers | Observation Layer |
+|-----------------|----------------|---------------------|-------------------|
+| ① Behavior feedback | Playwright screenshot + assertions | What did the user **see/experience**? | Presentation layer (end-to-end result) |
+| ② Frontend feedback | `logs/ui.log` (frontend stdout + request status codes + SSR errors) | What did the frontend **do**, and was the request **sent**? | Frontend runtime layer |
+| ③ Backend feedback | `logs/server.log` + `logs/access.log` (app logs + server + every HTTP request) | Did the backend **receive** the request, what did it **return**, did it **error**? | Backend runtime layer |
 
-交叉比对：
-  ② ui.log:      POST /api/skills 200 in 16ms      ← 前端请求发出且成功
-  ③ access.log:  GET /skills HTTP/1.1 200 OK        ← 后端收到并返回 200
-  ③ server.log:  Found 58 skills ... ls: Directory not found  ← 后端逻辑异常！
-
-结论：请求链路全通（②③状态码均 200），但 server.log 暴露后端
-      在 ls 一个不存在的路径 → 根因在后端，且是路径解析问题。
-      一次定位，无需试错。
-```
-
-对照表（一眼定位根因层）：
-
-| ① 行为 | ② 前端(ui.log) | ③ 后端(access/server) | 根因层级 |
-|--------|----------------|------------------------|----------|
-| 结果错 | 无请求记录 | 无请求记录 | 前端：事件/状态未触发请求 |
-| 结果错 | 请求 4xx/5xx | 有报错堆栈 | 后端：逻辑/数据异常 |
-| 结果错 | 请求 200 | 200 + 日志正常 | 前端：拿到正确数据但渲染/状态错误 |
-| 结果错 | 请求 200 | server.log 有异常但仍返回 200 | 后端：吞掉异常、返回了错误内容 |
-| 结果错 | 请求超时 | 无访问记录 | 接口契约：URL/端口/代理错配 |
-
-### 与自愈闭环的关系
-
-三重反馈是自愈闭环（原则 2）的**输入燃料**——反馈越完整、越实时，方向假设越准，3 × 3 预算消耗越少：
+Together the three cover the **complete causal chain** of a single user action:
 
 ```
-Playwright 失败
+User action → [② frontend sends request] → [③ backend processes and responds] → [② frontend receives and renders] → [① user sees result]
+               ui.log                        access.log/server.log                 ui.log                             Playwright screenshot
+```
+
+### Triangulation: Cross-Verification Pinpoints the Root Cause
+
+When all three signals are readable in real time simultaneously (`tail -f`), the AI no longer "guesses the direction" but **cross-compares** to directly pinpoint the root-cause layer:
+
+```
+Symptom (①): Playwright assertion failed — page shows "0 skills"
+
+Cross-comparison:
+  ② ui.log:      POST /api/skills 200 in 16ms      ← frontend request sent and succeeded
+  ③ access.log:  GET /skills HTTP/1.1 200 OK        ← backend received and returned 200
+  ③ server.log:  Found 58 skills ... ls: Directory not found  ← backend logic anomaly!
+
+Conclusion: the request chain is fully connected (② ③ status codes both 200), but server.log
+            reveals the backend is doing `ls` on a non-existent path → root cause is in the backend,
+            and it's a path-resolution problem. Pinpointed in one shot, no trial and error needed.
+```
+
+Reference table (pinpoint the root-cause layer at a glance):
+
+| ① Behavior | ② Frontend (ui.log) | ③ Backend (access/server) | Root-Cause Layer |
+|------------|---------------------|----------------------------|------------------|
+| Wrong result | No request logged | No request logged | Frontend: event/state never triggered the request |
+| Wrong result | Request 4xx/5xx | Has error stack | Backend: logic/data anomaly |
+| Wrong result | Request 200 | 200 + normal logs | Frontend: got correct data but rendering/state is wrong |
+| Wrong result | Request 200 | server.log has anomaly but still returns 200 | Backend: swallowed the exception, returned wrong content |
+| Wrong result | Request timeout | No access record | API contract: URL/port/proxy misconfigured |
+
+### Relationship to the Self-Healing Loop
+
+Triple feedback is the **input fuel** for the self-healing loop (Principle 2) — the more complete and real-time the feedback, the more accurate the directional hypothesis, and the less of the 3 × 3 budget is consumed:
+
+```
+Playwright fails
    ↓
-AI 同时读取 ①截图 + ②ui.log + ③server.log/access.log
+AI simultaneously reads ① screenshot + ② ui.log + ③ server.log/access.log
    ↓
-三角定位 → 锁定根因层级（前端/后端/数据/契约）
+Triangulation → pinpoint the root-cause layer (frontend/backend/data/contract)
    ↓
-在正确位置修复（最小上游修复）
+Fix at the correct location (minimal upstream fix)
    ↓
-重跑 Playwright → 三路信号重新比对 → 收敛或换方向（受 3×3 约束）
+Re-run Playwright → re-compare all three signals → converge or switch direction (subject to 3 × 3 constraints)
 ```
 
-### 工程前提：三路日志必须实时、可 tail
+### Engineering Prerequisite: All Three Logs Must Be Real-Time and Tailable
 
-三重反馈成立的硬性前提是**所有 stdout 都被实时落盘、可 `tail -f`**，无论服务以何种方式启动（脚本 / IDE 调试 / 手动）：
+The hard prerequisite for triple feedback is that **all stdout is persisted to disk in real time and is `tail -f`-able**, regardless of how the service is started (script / IDE debug / manual):
 
-- **后端**：在应用入口 tee `stdout`/`stderr` 到 `logs/server.log`；服务器访问日志单独写 `logs/access.log`。
-- **前端**：`dev` 脚本将前端 dev server 输出 `tee` 到 `logs/ui.log`。
-- **统一监控**：`tail -f logs/server.log logs/access.log logs/ui.log`。
+- **Backend**: at the application entry, tee `stdout`/`stderr` to `logs/server.log`; write the server access log separately to `logs/access.log`.
+- **Frontend**: the `dev` script tees the frontend dev-server output to `logs/ui.log`.
+- **Unified monitoring**: `tail -f logs/server.log logs/access.log logs/ui.log`.
 
-> 若任一路反馈缺失（如后端只输出到 IDE 控制台、未落盘），三角定位即退化为单点猜测，自愈闭环的收敛性随之下降。**保证三路反馈的实时可读，是 Flow Coding 的基础设施。**
+> If any feedback stream is missing (e.g., the backend only outputs to the IDE console and isn't persisted), triangulation degrades into single-point guessing, and the convergence of the self-healing loop drops accordingly. **Ensuring all three feedback streams are readable in real time is Flow Coding's infrastructure.**
 
 ---
 

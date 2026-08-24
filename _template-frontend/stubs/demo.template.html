@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeClaw · &lt;FEATURE&gt; · 现网 / 建议 / 完成后</title>
+  <!--
+    复制为 docs/features/<id>/demo-<id>.html
+    每块绑定将要实现的 data-testid，并在注释写清 tsx 路径。
+    至少：现网进行中 · 建议进行中。若完成后冻结，必须有第三态且与现网终态同构。
+  -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink: #232a33; --ink-2: #5a6470; --line: rgba(40,52,68,.10); --accent: #3a6ea5; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink); background: #e8edf3; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .harness {
+      padding: 8px 16px; font-size: 11px; background: #0f172a; color: #94a3b8;
+      display: flex; gap: 14px; flex-wrap: wrap;
+    }
+    .harness b { color: #fff; } .harness code { color: #7dd3fc; }
+    .tabs { display: flex; gap: 6px; padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--line); }
+    .tabs button {
+      font: inherit; font-size: 12px; font-weight: 600; border: 1px solid var(--line);
+      background: #fff; color: var(--ink-2); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+    }
+    .tabs button.on { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .note { padding: 8px 16px; font-size: 12px; color: var(--ink-2); background: #fffbeb; border-bottom: 1px solid #fde68a; }
+    .app { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+    .pane { display: none; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; min-height: 200px; }
+    .pane.on { display: block; }
+    .hint { font-size: 12px; color: var(--ink-2); margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="harness">
+    <b>&lt;FEATURE&gt; · 定版</b>
+    <span>一句话合同写这里</span>
+    <code>data-testid=...</code>
+  </div>
+  <div class="tabs">
+    <button class="on" data-tab="now" type="button">1 现网进行中</button>
+    <button data-tab="next" type="button">2 建议进行中</button>
+    <button data-tab="after" type="button">3 完成后</button>
+  </div>
+  <div class="note" id="note">现网：人看见什么，缺什么决策证据。</div>
+
+  <div class="app">
+    <section class="pane on" id="pane-now">
+      <p class="hint">对照 Phase 0 headed dump。testid 必须与现网一致。</p>
+      <div data-testid="replace-me">现网可见面放这里</div>
+    </section>
+    <section class="pane" id="pane-next">
+      <p class="hint">建议态：新 testid 先写进 methodology。无数据时不要画假内容。</p>
+      <div data-testid="replace-me">建议可见面放这里</div>
+    </section>
+    <section class="pane" id="pane-after">
+      <p class="hint">若合同冻结终态：此处必须与现网完成后同构（class / 结构）。</p>
+      <div data-role="assistant">完成后可见面放这里</div>
+    </section>
+  </div>
+
+  <script>
+    const NOTES = {
+      now: "现网：人看见什么，缺什么决策证据。",
+      next: "建议：加强进行中。新 testid 与 methodology 同名。",
+      after: "完成后：与现网终态一致，或明确列出允许的变化。"
+    };
+    document.querySelectorAll(".tabs button").forEach((b) => {
+      b.addEventListener("click", () => {
+        document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
+        document.querySelectorAll(".pane").forEach((p) => p.classList.toggle("on", p.id === "pane-" + b.dataset.tab));
+        document.getElementById("note").textContent = NOTES[b.dataset.tab];
+      });
+    });
+  </script>
+</body>
+</html>

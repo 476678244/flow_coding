@@ -1,0 +1,460 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #0d1410; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+window.SCENE_FONTS = ['900 74px "Songti SC"', '700 24px "PingFang SC"'];
+const W = 1920, H = 1080;
+const ctx = document.getElementById('c').getContext('2d');
+let TL = null;
+
+const S = 19;
+const OX = 70, OY = 236;
+const PW = 68, PD = 35;
+const px = (x) => OX + x * S;
+const py = (y) => OY + y * S;
+
+const SANS = '"PingFang SC", "Hiragino Sans GB", sans-serif';
+const SERIF = '"Songti SC", "STSong", serif';
+const RED = '#d7263d', BLUE = '#2456a6', GOLD = '#f2c14e', INK = '#f4efe6';
+
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = (p) => { p = clamp(p); return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; };
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const lerpPt = (a, b, p) => [lerp(a[0], b[0], p), lerp(a[1], b[1], p)];
+
+function line(key) {
+  const l = TL.lines.find((x) => x.key === key);
+  if (!l) throw new Error(`[scene] line key not in timeline: ${key}. Keys: ${TL.lines.map((x) => x.key).join(',')}`);
+  return l;
+}
+
+const GK = { pos: [34, 0.9], n: 1 };
+const NEAR = { pos: [38.4, 0.9], n: 2 };
+const ZONE = [
+  { pos: [29.2, 6.3], n: 4 },
+  { pos: [34.0, 6.3], n: 5 },
+  { pos: [38.8, 6.3], n: 3 },
+];
+const EDGE = { pos: [35.5, 18.5], n: 8 };
+const ATT = [
+  { from: [34.5, 13.5], to: [36.4, 9.6], n: 9, tall: true },
+  { from: [40.5, 14.2], to: [42.0, 9.2], n: 11 },
+  { from: [28.0, 14.0], to: [31.3, 9.6], n: 7 },
+];
+const LINE_Y = 14.6;
+const MARK_N = [6, 15, 14];
+const ATT_EDGE = { pos: [26.5, 19.5], n: 10 };
+const TAKER = { pos: [68.8, -0.6], n: 17 };
+const CORNER = [67.6, -0.3];
+const HEADER_PT = [34.2, 6.9];
+const CLEAR_PT = [31.0, 24.5];
+
+function bg() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#111a14');
+  g.addColorStop(1, '#0a0f0c');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function pitch() {
+  ctx.save();
+  const x0 = px(0), y0 = py(-1.6), x1 = px(PW), y1 = py(PD);
+  for (let i = 0; i < 9; i++) {
+    const ya = py(-1.6 + i * (PD + 1.6) / 9), yb = py(-1.6 + (i + 1) * (PD + 1.6) / 9);
+    ctx.fillStyle = i % 2 ? '#2f6b3a' : '#2a6234';
+    ctx.fillRect(x0 - 30, ya, x1 - x0 + 60, yb - ya);
+  }
+  const vg = ctx.createRadialGradient(px(36), py(10), 100, px(34), py(16), 900);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.38)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(x0 - 30, y0, x1 - x0 + 60, y1 - y0);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(0)); ctx.lineTo(px(PW), py(0));
+  ctx.moveTo(px(PW), py(0)); ctx.lineTo(px(PW), py(PD));
+  ctx.stroke();
+  ctx.strokeRect(px(34 - 20.16), py(0), 40.32 * S, 16.5 * S);
+  ctx.strokeRect(px(34 - 9.16), py(0), 18.32 * S, 5.5 * S);
+  ctx.beginPath();
+  ctx.arc(px(34), py(11), 9.15 * S, Math.asin(5.5 / 9.15), Math.PI - Math.asin(5.5 / 9.15));
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.beginPath(); ctx.arc(px(34), py(11), 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px(PW), py(0), 1 * S, Math.PI / 2, Math.PI);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(px(34 - 3.66), py(-1.5), 7.32 * S, 1.5 * S);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 12; i++) {
+    ctx.beginPath();
+    ctx.moveTo(px(34 - 3.66 + i * 0.61), py(-1.5)); ctx.lineTo(px(34 - 3.66 + i * 0.61), py(0));
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(px(34 - 3.66), py(0)); ctx.lineTo(px(34 - 3.66), py(-1.5));
+  ctx.lineTo(px(34 + 3.66), py(-1.5)); ctx.lineTo(px(34 + 3.66), py(0));
+  ctx.stroke();
+
+  ctx.strokeStyle = '#ddd'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(px(PW), py(0)); ctx.lineTo(px(PW), py(0) - 34); ctx.stroke();
+  ctx.fillStyle = GOLD;
+  ctx.beginPath();
+  ctx.moveTo(px(PW), py(0) - 34); ctx.lineTo(px(PW) + 20, py(0) - 27); ctx.lineTo(px(PW), py(0) - 20);
+  ctx.fill();
+  ctx.restore();
+}
+
+function player(pos, color, n, alpha = 1, opts = {}) {
+  const x = px(pos[0]), y = py(pos[1]);
+  const r = opts.r || 15;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(x + 3, y + 5, r, r * 0.8, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = opts.ring || 'rgba(255,255,255,0.9)';
+  ctx.stroke();
+  ctx.fillStyle = color === GOLD ? '#1b1b1b' : '#fff';
+  ctx.font = `700 ${r}px ${SANS}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(String(n), x, y + 1);
+  ctx.restore();
+}
+
+function pulse(pos, t, color, alpha) {
+  if (alpha <= 0) return;
+  const x = px(pos[0]), y = py(pos[1]);
+  ctx.save();
+  for (let k = 0; k < 2; k++) {
+    const ph = ((t * 1.1 + k * 0.5) % 1);
+    ctx.globalAlpha = alpha * (1 - ph) * 0.9;
+    ctx.strokeStyle = color; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, 18 + ph * 26, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function tag(pos, title, sub, alpha, dx = 26, dy = -46, color = RED) {
+  if (alpha <= 0) return;
+  const x = px(pos[0]) + dx, y = py(pos[1]) + dy;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.font = `700 24px ${SANS}`;
+  const w1 = ctx.measureText(title).width;
+  ctx.font = `500 17px ${SANS}`;
+  const w2 = sub ? ctx.measureText(sub).width : 0;
+  const w = Math.max(w1, w2) + 30, h = sub ? 66 : 42;
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(px(pos[0]), py(pos[1])); ctx.lineTo(x, y + h / 2); ctx.stroke();
+  ctx.fillStyle = 'rgba(244,239,230,0.96)';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, 6, h);
+  ctx.fillStyle = '#1d1d1d';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.font = `700 24px ${SANS}`;
+  ctx.fillText(title, x + 18, y + 8);
+  if (sub) {
+    ctx.fillStyle = '#5a5a5a';
+    ctx.font = `500 17px ${SANS}`;
+    ctx.fillText(sub, x + 18, y + 40);
+  }
+  ctx.restore();
+}
+
+function arrow(a, b, alpha, color = 'rgba(244,239,230,0.95)') {
+  if (alpha <= 0) return;
+  const x0 = px(a[0]), y0 = py(a[1]), x1 = px(b[0]), y1 = py(b[1]);
+  const ang = Math.atan2(y1 - y0, x1 - x0);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 4;
+  ctx.setLineDash([10, 8]);
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - Math.cos(ang) * 12, y1 - Math.sin(ang) * 12); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 - Math.cos(ang - 0.45) * 20, y1 - Math.sin(ang - 0.45) * 20);
+  ctx.lineTo(x1 - Math.cos(ang + 0.45) * 20, y1 - Math.sin(ang + 0.45) * 20);
+  ctx.fill();
+  ctx.restore();
+}
+
+function header(t) {
+  const a = ease(prog(t, 0, 0.8));
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = RED;
+  ctx.fillRect(70, 58, 6, 132);
+  ctx.font = `600 24px ${SANS}`;
+  ctx.fillStyle = RED;
+  ctx.textBaseline = 'top';
+  ctx.fillText('中国足球小将 · 战术课', 96, 58);
+  ctx.font = `900 74px ${SERIF}`;
+  ctx.fillStyle = INK;
+  ctx.fillText('角球怎么防', 92, 92);
+  ctx.font = `500 26px ${SANS}`;
+  ctx.fillStyle = 'rgba(244,239,230,0.7)';
+  ctx.fillText('区域 + 盯人 · 混合防守', 500, 132);
+  ctx.restore();
+}
+
+const STEPS = [
+  ['近门柱', '站住，不追球', 'near'],
+  ['区域', '小禁区前沿三个人', 'zone'],
+  ['盯人', '最高点贴身', 'mark'],
+  ['外压', '解围后整体上提', 'clear'],
+];
+
+function card(t) {
+  const x = 1440, y = 236, w = 420;
+  const a = ease(prog(t, 0.6, 1.4));
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(244,239,230,0.97)';
+  ctx.fillRect(x, y, w, 470);
+  ctx.fillStyle = RED;
+  ctx.fillRect(x, y, w, 6);
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = RED;
+  ctx.font = `600 20px ${SANS}`;
+  ctx.fillText('防角球 · 四件事', x + 30, y + 30);
+  ctx.fillStyle = '#1d1d1d';
+  ctx.font = `900 44px ${SERIF}`;
+  ctx.fillText('站位先于跑动', x + 30, y + 62);
+  STEPS.forEach(([title, sub, key], i) => {
+    const l = line(key);
+    const on = t >= l.start - 0.1;
+    const cur = on && (i === STEPS.length - 1 || t < line(STEPS[i + 1][2]).start - 0.1);
+    const yy = y + 150 + i * 76;
+    const hp = ease(prog(t, l.start - 0.1, l.start + 0.3));
+    if (cur) {
+      ctx.fillStyle = `rgba(215,38,61,${0.1 * hp})`;
+      ctx.fillRect(x + 16, yy - 10, w - 32, 66);
+    }
+    ctx.fillStyle = on ? RED : '#bdb6aa';
+    ctx.beginPath(); ctx.arc(x + 48, yy + 22, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 22px ${SANS}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(String(i + 1), x + 48, yy + 10);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = on ? '#1d1d1d' : '#a8a196';
+    ctx.font = `700 28px ${SANS}`;
+    ctx.fillText(title, x + 86, yy - 2);
+    ctx.fillStyle = on ? '#5a5a5a' : '#bdb6aa';
+    ctx.font = `500 20px ${SANS}`;
+    ctx.fillText(sub, x + 86, yy + 32);
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = a;
+  const ly = y + 500;
+  ctx.textBaseline = 'middle';
+  ctx.font = `500 20px ${SANS}`;
+  [[RED, '小将（防守）'], [BLUE, '对手（进攻）'], [GOLD, '门将']].forEach(([c, label], i) => {
+    const cx = x + 14 + i * 168, cy = ly + 20;
+    ctx.fillStyle = c;
+    ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(244,239,230,0.8)';
+    ctx.fillText(label, cx + 18, cy);
+  });
+  ctx.restore();
+}
+
+function subtitle(t) {
+  const l = TL.lines.find((x) => t >= x.start - 0.05 && t <= x.end + 0.15);
+  if (!l) return;
+  const a = Math.min(ease(prog(t, l.start - 0.05, l.start + 0.15)), 1 - ease(prog(t, l.end, l.end + 0.15)));
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = `600 40px ${SANS}`;
+  const w = ctx.measureText(l.text).width + 64;
+  const x = (W - w) / 2, y = 960;
+  ctx.fillStyle = 'rgba(16,16,16,0.82)';
+  ctx.fillRect(x, y, w, 72);
+  ctx.fillStyle = RED;
+  ctx.fillRect(x, y, 7, 72);
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(l.text, W / 2 + 4, y + 37);
+  ctx.restore();
+}
+
+function footer(t) {
+  ctx.save();
+  ctx.globalAlpha = 0.55 * ease(prog(t, 0.5, 1.2));
+  ctx.font = `500 18px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+  ctx.fillText('仿董路口吻 · AI 合成配音，非本人 · 战术演示', W - 60, H - 22);
+  ctx.restore();
+}
+
+function render(t) {
+  const Ln = line('near'), Lz = line('zone'), Lm = line('mark'), Lc = line('clear');
+  bg();
+  pitch();
+  header(t);
+
+  const appear = (i) => ease(prog(t, 0.5 + i * 0.12, 1.0 + i * 0.12));
+
+  const runP = ease(prog(t, Lm.start + 0.3, Lm.start + 2.4));
+  const kick = Lc.start + 0.15, land = kick + 1.15, out = land + 0.9;
+  const stepP = ease(prog(t, land + 0.15, land + 1.8));
+  const toLine = (p, y, x = p[0]) => [lerp(p[0], x, stepP), lerp(p[1], y, stepP)];
+
+  const attPos = ATT.map((a) => {
+    const p = lerpPt(a.from, a.to, runP);
+    return [p[0], p[1] + 1.2 * stepP];
+  });
+  const markPos = ATT.map((a, i) => {
+    const lag = ease(prog(t, Lm.start + 0.45, Lm.start + 2.6));
+    const base = lerpPt([a.from[0] - 0.9, a.from[1] - 1.7], [a.to[0] - 0.7, a.to[1] - 1.4], lag);
+    return toLine(base, LINE_Y + 0.4, [30.6, 36.6, 42.6][i]);
+  });
+  const zonePos = ZONE.map((z, i) => toLine(z.pos, LINE_Y, [27.6, 33.6, 39.6][i]));
+  const nearPos = toLine(NEAR.pos, LINE_Y - 0.6, 45.6);
+  const edgePos = toLine(EDGE.pos, 21.5);
+
+  const focus = (key) => {
+    const l = line(key);
+    return Math.min(ease(prog(t, l.start - 0.1, l.start + 0.35)), 1 - ease(prog(t, l.end + 0.1, l.end + 0.4)));
+  };
+
+  const fz = focus('zone');
+  if (fz > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.85 * fz;
+    ctx.fillStyle = 'rgba(215,38,61,0.24)';
+    ctx.strokeStyle = 'rgba(255,120,130,0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    const zx = px(26.5), zy = py(4.4), zw = 15 * S, zh = 4.2 * S;
+    ctx.fillRect(zx, zy, zw, zh);
+    ctx.strokeRect(zx, zy, zw, zh);
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  const fm = focus('mark');
+  if (fm > 0) {
+    ctx.save();
+    ctx.globalAlpha = fm;
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 2.5;
+    ATT.forEach((a, i) => {
+      ctx.beginPath();
+      ctx.moveTo(px(markPos[i][0]), py(markPos[i][1]));
+      ctx.lineTo(px(attPos[i][0]), py(attPos[i][1]));
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  const dimOthers = Math.max(focus('near'), fz, fm);
+  const dimA = (isFocus) => (isFocus ? 1 : 1 - 0.45 * dimOthers);
+  const curKey = ['near', 'zone', 'mark'].find((k) => focus(k) > 0.01);
+
+  player(TAKER.pos, BLUE, TAKER.n, appear(0) * dimA(false));
+  player(ATT_EDGE.pos, BLUE, ATT_EDGE.n, appear(1) * dimA(false));
+  ATT.forEach((a, i) => player(attPos[i], BLUE, a.n, appear(2 + i) * dimA(curKey === 'mark'), { r: a.tall ? 18 : 15 }));
+  player(GK.pos, GOLD, GK.n, appear(5) * dimA(false));
+  player(edgePos, RED, EDGE.n, appear(6) * dimA(false));
+  player(nearPos, RED, NEAR.n, appear(7) * dimA(curKey === 'near'));
+  ZONE.forEach((z, i) => player(zonePos[i], RED, z.n, appear(8 + i) * dimA(curKey === 'zone')));
+  markPos.forEach((m, i) => player(m, RED, MARK_N[i], appear(11 + i) * dimA(curKey === 'mark')));
+
+  const fn = focus('near');
+  pulse(nearPos, t, '#ffd1d6', fn);
+  tag(nearPos, '近门柱 · 站住', '不跟球跑，守住第一点', fn, 34, -96);
+
+  ZONE.forEach((z, i) => pulse(zonePos[i], t + i * 0.2, '#ffd1d6', fz));
+  tag([41.5, 6.3], '区域防守', '头球点，三个人卡住', fz, 120, -40);
+
+  pulse(attPos[0], t, '#bcd3ff', fm);
+  tag(attPos[0], '#9 最高点', '6号贴身，不让他起跳', fm, -330, 78, BLUE);
+
+  let ball;
+  let h = 0;
+  if (t < kick) {
+    ball = CORNER;
+  } else if (t < land) {
+    const p = (t - kick) / (land - kick);
+    const e = ease(p * 0.9 + 0.05);
+    ball = lerpPt(CORNER, HEADER_PT, e);
+    h = Math.sin(Math.PI * clamp(p)) * 70;
+  } else {
+    const p = ease(prog(t, land, out));
+    ball = lerpPt(HEADER_PT, CLEAR_PT, p);
+    h = Math.sin(Math.PI * clamp((t - land) / (out - land))) * 55;
+  }
+  const ba = appear(4);
+  ctx.save();
+  ctx.globalAlpha = ba;
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath(); ctx.ellipse(px(ball[0]) + 4, py(ball[1]) + 6, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+  const br = 9 + h * 0.06;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(px(ball[0]), py(ball[1]) - h, br, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+
+  if (t > kick && t < land + 0.2) {
+    ctx.save();
+    ctx.globalAlpha = 0.6 * (1 - prog(t, land, land + 0.2));
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.setLineDash([6, 8]); ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let k = 0; k <= 30; k++) {
+      const p = k / 30;
+      if (kick + p * (land - kick) > t) break;
+      const e = ease(p * 0.9 + 0.05);
+      const q = lerpPt(CORNER, HEADER_PT, e);
+      const hh = Math.sin(Math.PI * p) * 70;
+      if (k === 0) ctx.moveTo(px(q[0]), py(q[1]) - hh); else ctx.lineTo(px(q[0]), py(q[1]) - hh);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const winA = Math.min(ease(prog(t, land - 0.05, land + 0.25)), 1 - ease(prog(t, land + 1.0, land + 1.3)));
+  tag(zonePos[1], '5号先到 · 顶出去', null, winA, -270, -70);
+
+  const pushA = Math.min(ease(prog(t, land + 0.2, land + 0.6)), 1 - ease(prog(t, TL.total - 0.3, TL.total)));
+  const arrowA = pushA * (1 - 0.85 * ease(prog(t, land + 1.4, land + 2.0)));
+  [...zonePos, nearPos].forEach((p) => arrow([p[0], p[1] + 1.3], [p[0], p[1] + 4.6], arrowA));
+  tag([47.2, LINE_Y], '整体外压', '一起上提，别留人在门前', pushA, 70, -30);
+
+  card(t);
+  subtitle(t);
+  footer(t);
+}
+
+window.setup = (tl) => { TL = tl; };
+window.render = render;
+</script>
+</body>
+</html>

@@ -38,6 +38,8 @@ Soul.md → 本文件 → Index.md → 被点名的 SKILL.md
 | 跑 Playwright / 截图 / 5 阶段 | [`flow_coding_testing`](flow_coding_testing/SKILL.md) |
 | 三路日志、三角定位 | [`flow_coding_logging`](flow_coding_logging/SKILL.md) |
 | 真实 Chrome + 登录态 CDP | [`flow_coding_chrome_cdp`](flow_coding_chrome_cdp/SKILL.md) |
+| 编辑器环境：多端同一套 md 预览 / Obsidian 链接 | [`markdown-preview-obsidian`](markdown-preview-obsidian/SKILL.md)，不在八段上 |
+| 做讲解 / 战术 / 知识类短视频 | [`flow_coding_vedio`](flow_coding_vedio/SKILL.md)，不在八段上 |
 
 缺「人看见什么 / 下一步 / 有无可见面」→ 先问人，不要猜着建夹或开桌。
 

@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #0d1410; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+// Contract with render.js: window.setup(timeline), window.render(t), <canvas id="c">.
+// render(t) is a pure function of t. Drive every animation from line(key).start / .end, never from wall-clock time.
+window.SCENE_FONTS = ['900 74px "Songti SC"', '700 24px "PingFang SC"'];
+
+const W = 1920, H = 1080;
+const ctx = document.getElementById('c').getContext('2d');
+let TL = null;
+
+const SANS = '"PingFang SC", "Hiragino Sans GB", sans-serif';
+const SERIF = '"Songti SC", "STSong", serif';
+const ACCENT = '#d7263d', INK = '#f4efe6';
+
+// TODO(project): fill in. Shown bottom-right on every frame when narration imitates a real person or uses synthetic voice.
+const DISCLAIMER = 'AI 合成配音 · 演示';
+const KICKER = 'TODO 栏目名';
+const TITLE = 'TODO 标题';
+const SUBTITLE_LINE = 'TODO 副标题';
+
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = (p) => { p = clamp(p); return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; };
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+
+function line(key) {
+  const l = TL.lines.find((x) => x.key === key);
+  if (!l) throw new Error(`[scene] line key not in timeline: ${key}. Keys: ${TL.lines.map((x) => x.key).join(',')}`);
+  return l;
+}
+
+// 0 → 1 while line `key` is being spoken, with short fades; use it to highlight that line's subject.
+function focus(t, key) {
+  const l = line(key);
+  return Math.min(ease(prog(t, l.start - 0.1, l.start + 0.35)), 1 - ease(prog(t, l.end + 0.1, l.end + 0.4)));
+}
+
+function bg() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#111a14');
+  g.addColorStop(1, '#0a0f0c');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function header(t) {
+  ctx.save();
+  ctx.globalAlpha = ease(prog(t, 0, 0.8));
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(70, 58, 6, 132);
+  ctx.textBaseline = 'top';
+  ctx.font = `600 24px ${SANS}`;
+  ctx.fillText(KICKER, 96, 58);
+  ctx.font = `900 74px ${SERIF}`;
+  ctx.fillStyle = INK;
+  ctx.fillText(TITLE, 92, 92);
+  const tw = ctx.measureText(TITLE).width;
+  ctx.font = `500 26px ${SANS}`;
+  ctx.fillStyle = 'rgba(244,239,230,0.7)';
+  ctx.fillText(SUBTITLE_LINE, 92 + tw + 30, 132);
+  ctx.restore();
+}
+
+function subtitle(t) {
+  const l = TL.lines.find((x) => t >= x.start - 0.05 && t <= x.end + 0.15);
+  if (!l) return;
+  const a = Math.min(ease(prog(t, l.start - 0.05, l.start + 0.15)), 1 - ease(prog(t, l.end, l.end + 0.15)));
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = `600 40px ${SANS}`;
+  const w = ctx.measureText(l.text).width + 64;
+  const x = (W - w) / 2, y = 960;
+  ctx.fillStyle = 'rgba(16,16,16,0.82)';
+  ctx.fillRect(x, y, w, 72);
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(x, y, 7, 72);
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(l.text, W / 2 + 4, y + 37);
+  ctx.restore();
+}
+
+function footer(t) {
+  ctx.save();
+  ctx.globalAlpha = 0.55 * ease(prog(t, 0.5, 1.2));
+  ctx.font = `500 18px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+  ctx.fillText(DISCLAIMER, W - 60, H - 22);
+  ctx.restore();
+}
+
+// TODO(project): main stage. One block per narration line key, gated by focus(t, key).
+function stage(t) {
+  TL.lines.forEach((l, i) => {
+    const a = focus(t, l.key);
+    if (a <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(244,239,230,0.95)';
+    ctx.font = `700 64px ${SANS}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(`${i + 1} · ${l.key}`, W / 2, lerp(560, 540, a));
+    ctx.restore();
+  });
+}
+
+function render(t) {
+  bg();
+  header(t);
+  stage(t);
+  subtitle(t);
+  footer(t);
+}
+
+window.setup = (tl) => { TL = tl; };
+window.render = render;
+</script>
+</body>
+</html>

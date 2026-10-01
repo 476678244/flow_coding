@@ -12,7 +12,7 @@ Flow Coding 技能目录。先读 [Soul.md](Soul.md) 与 [Agents.md](Agents.md)�
 
 ## 现在有什么
 
-技能分三层。不要把学习层画进交付八段。
+分层如下。不要把学习层、环境层、内容层画进交付八段。
 
 ```
 学习层    self-reflect-after-bug-fix
@@ -24,6 +24,10 @@ Flow Coding 技能目录。先读 [Soul.md](Soul.md) 与 [Agents.md](Agents.md)�
             type=ui 且只要设计 → ui-design-roundtable（build 前停）
 
 验证层    flow_coding_testing  +  flow_coding_logging  +  flow_coding_chrome_cdp
+
+环境层    markdown-preview-obsidian（编辑器环境配置，不在交付管道上）
+
+内容层    flow_coding_vedio（代码出讲解视频，不在交付管道上）
 ```
 
 图例：✅ 可跑（有 `SKILL.md`）。愿望不要标 ✅。
@@ -72,6 +76,22 @@ once / keep：[templates/tests.md](flow-coding-software-engineering/templates/te
 | [flow_coding_chrome_cdp/](flow_coding_chrome_cdp/SKILL.md) | 真实 Chrome CDP；默认 sync profile | ✅ |
 
 可见面约定：Playwright TS、viewport **1920×1080**。CDP：默认 rsync 日常 profile → `Chrome-CDP`，禁止把 `--no-sync` 写成默认。
+
+### 环境层
+
+不在交付八段上；配置的是编辑器环境本身。
+
+| 夹 | 作用 | 状态 |
+| --- | --- | --- |
+| [markdown-preview-obsidian/](markdown-preview-obsidian/SKILL.md) | Devin / Cursor / Windsurf / VS Code 同一套 Obsidian 风格 md 预览：默认预览、双击跳源码、[[wikilink]]、共享主题 CSS | ✅ |
+
+### 内容层
+
+不在交付八段上；产出的是视频成片，不是产品代码。
+
+| 夹 | 作用 | 状态 |
+| --- | --- | --- |
+| [flow_coding_vedio/](flow_coding_vedio/SKILL.md) | 脚本 → TTS 时间轴 → Canvas `render(t)` → 无头 Chrome 逐帧 → 抽静帧看图自检 → ffmpeg 成片。样例 [examples/corner_defense/](flow_coding_vedio/examples/corner_defense/) | ✅ |
 
 ## 尚未做
 

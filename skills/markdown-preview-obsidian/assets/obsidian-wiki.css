@@ -1,0 +1,141 @@
+/* Shared Obsidian-like Markdown preview theme
+   Used by both Devin Desktop and Cursor via "markdown.styles".
+   Body classes provided by the host: .vscode-light / .vscode-dark */
+
+/* ---------- Layout & typography ---------- */
+body {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 32px 48px;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  word-wrap: break-word;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 650;
+  line-height: 1.35;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+}
+h1 { font-size: 1.9em; border-bottom: 1px solid rgba(128, 128, 128, 0.25); padding-bottom: 0.3em; }
+h2 { font-size: 1.5em; border-bottom: 1px solid rgba(128, 128, 128, 0.15); padding-bottom: 0.25em; }
+h3 { font-size: 1.25em; }
+
+p { margin: 0.8em 0; }
+
+/* ---------- Links ---------- */
+a {
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+a:hover { border-bottom: 1px solid currentColor; }
+
+/* Obsidian-style [[wikilink]] rendered by Markdown Memo: <a data-href="..."> */
+a[data-href] {
+  font-weight: 500;
+  padding: 0 1px;
+  border-radius: 3px;
+  border-bottom: none;
+}
+a[data-href]:hover { text-decoration: underline; }
+
+/* [[link]] pointing to a note that does not exist yet */
+a.memo-invalid-link {
+  color: #cc0013;
+  border-bottom: 1px dashed #cc0013;
+  cursor: not-allowed;
+}
+a.memo-invalid-link:hover { border-bottom-style: solid; }
+
+/* ![[note]] embedded block rendered by Memo */
+.memo-markdown-embed {
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 8px;
+  padding: 8px 20px 16px;
+  margin: 1.2em 0;
+}
+
+/* ---------- Inline code & code blocks ---------- */
+code {
+  font-family: "Maple Mono NF CN", "Maple Mono Nerd", "JetBrains Mono",
+    Menlo, monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+pre {
+  padding: 14px 18px;
+  border-radius: 8px;
+  overflow-x: auto;
+  line-height: 1.55;
+}
+pre code { padding: 0; background: transparent; }
+
+/* ---------- Blockquote / callout-ish ---------- */
+blockquote {
+  margin: 1em 0;
+  padding: 0.4em 1.1em;
+  border-left: 4px solid rgba(128, 128, 128, 0.45);
+  border-radius: 0 6px 6px 0;
+}
+blockquote p { margin: 0.4em 0; }
+
+/* ---------- Lists ---------- */
+ul, ol { padding-left: 1.8em; }
+li { margin: 0.25em 0; }
+li > p { margin: 0.3em 0; }
+
+/* ---------- Tables ---------- */
+table {
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  width: auto;
+  min-width: 40%;
+  display: block;
+  overflow-x: auto;
+}
+th, td {
+  padding: 6px 14px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+}
+th { font-weight: 650; }
+tr:nth-child(even) td { background: rgba(128, 128, 128, 0.07); }
+
+/* ---------- Misc ---------- */
+hr {
+  border: none;
+  border-top: 1px solid rgba(128, 128, 128, 0.3);
+  margin: 2em 0;
+}
+img { max-width: 100%; border-radius: 6px; }
+
+/* ---------- Light theme accents ---------- */
+body.vscode-light {
+  color: #2e3440;
+  background-color: #fdfcf8;
+}
+body.vscode-light a { color: #0b5fff; }
+body.vscode-light a[data-href] { color: #7057ff; }
+body.vscode-light code { background: rgba(27, 31, 35, 0.06); }
+body.vscode-light pre { background: #f4f2ec; }
+body.vscode-light blockquote {
+  background: rgba(11, 95, 255, 0.05);
+  color: #4a4f57;
+}
+
+/* ---------- Dark theme accents ---------- */
+body.vscode-dark {
+  color: #d8dce6;
+  background-color: #1e2027;
+}
+body.vscode-dark a { color: #6ea8ff; }
+body.vscode-dark a[data-href] { color: #a597ff; }
+body.vscode-dark code { background: rgba(255, 255, 255, 0.08); }
+body.vscode-dark pre { background: #262931; }
+body.vscode-dark blockquote {
+  background: rgba(110, 168, 255, 0.07);
+  color: #aab1bd;
+}

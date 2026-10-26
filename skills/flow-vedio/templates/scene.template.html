@@ -11,7 +11,7 @@
 <canvas id="c" width="1920" height="1080"></canvas>
 <script>
 // Contract with render.js: window.setup(timeline), window.render(t), <canvas id="c">.
-// render(t) is a pure function of t. Drive every animation from line(key).start / .end, never from wall-clock time.
+// render(t) is a pure function of t. Drive every animation from cue(key) / line(key).end, never from hard-coded seconds.
 window.SCENE_FONTS = ['900 74px "Songti SC"', '700 24px "PingFang SC"'];
 
 const W = 1920, H = 1080;
@@ -28,8 +28,12 @@ const KICKER = 'TODO 栏目名';
 const TITLE = 'TODO 标题';
 const SUBTITLE_LINE = 'TODO 副标题';
 
+const FPS = 30;
+const STAGGER = 0.12;
+
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const ease = (p) => { p = clamp(p); return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; };
+const easeOut = (p) => 1 - Math.pow(1 - clamp(p), 3);
 const prog = (t, a, b) => clamp((t - a) / (b - a));
 const lerp = (a, b, p) => a + (b - a) * p;
 
@@ -39,10 +43,25 @@ function line(key) {
   return l;
 }
 
+// Visual cut point for a line: one frame before the voice starts. Picture first, sound right after, reads as on the beat.
+const cue = (key) => line(key).start - 1 / FPS;
+
+// Entrance of the i-th element belonging to line `key`: starts on cue, each next element STAGGER later, eases out.
+function enter(t, key, i = 0, dur = 0.5) {
+  const s = cue(key) + i * STAGGER;
+  return easeOut(prog(t, s, s + dur));
+}
+
+// Slow 0 → 1 drift across the whole line, for a gentle push / glow so long lines never freeze into a slide.
+function drift(t, key) {
+  const l = line(key);
+  return prog(t, cue(key), l.end);
+}
+
 // 0 → 1 while line `key` is being spoken, with short fades; use it to highlight that line's subject.
 function focus(t, key) {
   const l = line(key);
-  return Math.min(ease(prog(t, l.start - 0.1, l.start + 0.35)), 1 - ease(prog(t, l.end + 0.1, l.end + 0.4)));
+  return Math.min(easeOut(prog(t, cue(key) - 0.2, cue(key))), 1 - ease(prog(t, l.end + 0.1, l.end + 0.4)));
 }
 
 function bg() {
@@ -100,17 +119,40 @@ function footer(t) {
   ctx.restore();
 }
 
-// TODO(project): main stage. One block per narration line key, gated by focus(t, key).
+// Provenance of the current shot (line.source from script.json), top-right: 代码渲染 / AI 生成（工具名）/ 素材出处.
+function sourceTag(t) {
+  const l = TL.lines.find((x) => t >= cue(x.key) && t <= x.end + 0.15);
+  if (!l || !l.source) return;
+  ctx.save();
+  ctx.globalAlpha = 0.6 * focus(t, l.key);
+  ctx.font = `500 18px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText(l.source, W - 60, 40);
+  ctx.restore();
+}
+
+// TODO(project): main stage. One block per narration line key: elements enter staggered on cue, the focus drifts while held.
 function stage(t) {
   TL.lines.forEach((l, i) => {
     const a = focus(t, l.key);
     if (a <= 0) return;
     ctx.save();
-    ctx.globalAlpha = a;
+    ctx.globalAlpha = a * enter(t, l.key, 0);
     ctx.fillStyle = 'rgba(244,239,230,0.95)';
     ctx.font = `700 64px ${SANS}`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(`${i + 1} · ${l.key}`, W / 2, lerp(560, 540, a));
+    ctx.fillText(`${i + 1} · ${l.key}`, W / 2, lerp(470, 450, enter(t, l.key, 0)));
+    const uw = 520 * drift(t, l.key);
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(W / 2 - uw / 2, 500, uw, 5);
+    ctx.font = `500 32px ${SANS}`;
+    ctx.fillStyle = 'rgba(244,239,230,0.75)';
+    (l.must || []).forEach((m, j) => {
+      const e = enter(t, l.key, j + 1);
+      ctx.globalAlpha = a * e;
+      ctx.fillText(m, W / 2 + lerp(40, 0, e), 560 + j * 56);
+    });
     ctx.restore();
   });
 }
@@ -120,6 +162,7 @@ function render(t) {
   header(t);
   stage(t);
   subtitle(t);
+  sourceTag(t);
   footer(t);
 }
 

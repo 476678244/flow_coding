@@ -1,7 +1,10 @@
 // Render <project>/scene.html frame by frame with system Chrome, pipe JPEG frames into ffmpeg.
 //
 // Usage:
-//   PLAYWRIGHT_MODULE=<path/to/node_modules/playwright> node render.js --project <dir> [--stills 3,6.5,10] [--fps 30]
+//   PLAYWRIGHT_MODULE=<path/to/node_modules/playwright> node render.js --project <dir> [--stills 3,6.5,10 | --motion] [--fps 30]
+//
+// --stills  writes stills/still_<t>.jpg plus stills/checklist.md (each still against its line's `must` list).
+// --motion  samples the whole timeline and fails if the picture stays static longer than MAX_STATIC_SECONDS.
 //
 // Scene contract: window.setup(timeline) once, then window.render(t) draws frame t (seconds) onto <canvas id="c">.
 // render(t) must be a pure function of t: no timers, Date.now, requestAnimationFrame, or unseeded Math.random.
@@ -10,26 +13,39 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+const MOTION_STEP = 0.1;
+const MAX_STATIC_SECONDS = 2.0;
+const PIXEL_DELTA = 30;
+const MIN_CHANGED_PIXELS = 40;
+
 function fail(msg) {
-  console.error(`[flow_coding_vedio/render] ${msg}`);
+  console.error(`[flow-vedio/render] ${msg}`);
   process.exit(1);
 }
 
 function parseArgs(argv) {
-  const out = { fps: 30, stills: null, project: null };
+  const out = { fps: 30, stills: null, motion: false, project: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--project') out.project = argv[++i];
     else if (a === '--stills') out.stills = (argv[++i] || '').split(',').map(Number);
+    else if (a === '--motion') out.motion = true;
     else if (a === '--fps') out.fps = Number(argv[++i]);
-    else fail(`unknown arg: ${a}\n  Expected: --project <dir> [--stills t1,t2] [--fps 30]`);
+    else fail(`unknown arg: ${a}\n  Expected: --project <dir> [--stills t1,t2 | --motion] [--fps 30]`);
   }
   if (!out.project) fail('missing --project <dir>');
+  if (out.stills && out.motion) fail('--stills and --motion are separate passes; run them one at a time');
   if (!Number.isFinite(out.fps) || out.fps <= 0) fail(`--fps must be a positive number\n  Actual: ${out.fps}`);
   if (out.stills && (out.stills.length === 0 || out.stills.some((n) => !Number.isFinite(n)))) {
     fail(`--stills must be comma-separated seconds\n  Actual: ${argv.join(' ')}`);
   }
   return out;
+}
+
+function lineAt(tl, t) {
+  const inside = tl.lines.find((l) => t >= l.start && t <= l.end);
+  if (inside) return inside;
+  return tl.lines.reduce((a, b) => (Math.abs((a.start + a.end) / 2 - t) <= Math.abs((b.start + b.end) / 2 - t) ? a : b));
 }
 
 function loadPlaywright() {
@@ -84,12 +100,60 @@ async function main() {
   if (args.stills) {
     const stillDir = path.join(dir, 'stills');
     fs.mkdirSync(stillDir, { recursive: true });
+    const checklist = ['# 静帧评审', '', `整片导演卡：${(tl.look || []).join(' · ')}`, ''];
     for (const t of args.stills) {
-      const out = path.join(stillDir, `still_${t.toFixed(1)}.jpg`);
+      const name = `still_${t.toFixed(1)}.jpg`;
+      const out = path.join(stillDir, name);
       fs.writeFileSync(out, await grab(t));
-      console.log(`[flow_coding_vedio/render] still ${out}`);
+      console.log(`[flow-vedio/render] still ${out}`);
+      const l = lineAt(tl, t);
+      checklist.push(`## ${name} · ${l.key}`, '', `旁白：${l.text}`, `出处：${l.source || '未标'}`, '');
+      for (const m of l.must || []) checklist.push(`- [ ] ${m}`);
+      checklist.push('');
+    }
+    fs.writeFileSync(path.join(stillDir, 'checklist.md'), checklist.join('\n'));
+    console.log(`[flow-vedio/render] checklist ${path.join(stillDir, 'checklist.md')}`);
+    await browser.close();
+    return;
+  }
+
+  if (args.motion) {
+    await page.evaluate(() => { window.__prevFrame = null; });
+    const diffs = [];
+    for (let t = 0; t <= tl.total + 1e-6; t += MOTION_STEP) {
+      const changed = await page.evaluate(({ t, delta }) => {
+        window.render(t);
+        const c = document.getElementById('c');
+        const cur = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        const prev = window.__prevFrame;
+        let n = 0;
+        if (prev) for (let i = 0; i < cur.length; i += 4) {
+          if (Math.abs(cur[i] - prev[i]) + Math.abs(cur[i + 1] - prev[i + 1]) + Math.abs(cur[i + 2] - prev[i + 2]) > delta) n++;
+        }
+        window.__prevFrame = cur;
+        return n;
+      }, { t, delta: PIXEL_DELTA });
+      if (pageErrors.length) fail(`scene threw at t=${t.toFixed(2)}\n  ${pageErrors.join('\n  ')}`);
+      diffs.push({ t, changed });
     }
     await browser.close();
+    const runs = [];
+    let from = null;
+    for (let i = 1; i < diffs.length; i++) {
+      const still = diffs[i].changed < MIN_CHANGED_PIXELS;
+      if (still && from === null) from = diffs[i - 1].t;
+      if ((!still || i === diffs.length - 1) && from !== null) {
+        const to = still ? diffs[i].t : diffs[i - 1].t;
+        if (to - from > MAX_STATIC_SECONDS) runs.push({ from, to, key: lineAt(tl, (from + to) / 2).key });
+        from = null;
+      }
+    }
+    if (runs.length) {
+      fail(`picture static longer than ${MAX_STATIC_SECONDS}s (slideshow, not motion)\n` +
+        runs.map((r) => `  ${r.from.toFixed(1)}s – ${r.to.toFixed(1)}s (${(r.to - r.from).toFixed(1)}s) during line '${r.key}'`).join('\n') +
+        `\n  Fix: stagger entrances with enter(), or keep a slow drift() on the focus during long lines`);
+    }
+    console.log(`[flow-vedio/render] motion ok: ${diffs.length} samples, no static run over ${MAX_STATIC_SECONDS}s`);
     return;
   }
 
@@ -107,7 +171,7 @@ async function main() {
   const code = await new Promise((r) => ff.on('close', r));
   await browser.close();
   if (code !== 0) fail(`ffmpeg exited ${code}\n  Output: ${outPath}`);
-  console.log(`[flow_coding_vedio/render] ${frames} frames in ${((Date.now() - started) / 1000).toFixed(1)}s -> ${outPath}`);
+  console.log(`[flow-vedio/render] ${frames} frames in ${((Date.now() - started) / 1000).toFixed(1)}s -> ${outPath}`);
 }
 
 main().catch((e) => fail(e && e.stack ? e.stack : String(e)));

@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 def fail(msg: str) -> None:
-    sys.exit(f"[flow_coding_vedio/mux] {msg}")
+    sys.exit(f"[flow-vedio/mux] {msg}")
 
 
 def main(project: Path) -> None:
@@ -72,7 +72,7 @@ def main(project: Path) -> None:
         )
     if not -20 <= mean_db <= -14:
         fail(f"mean volume outside -20 to -14 dB\n  Actual: {mean_db} dB\n  Path: {out}")
-    print(f"[flow_coding_vedio/mux] {out}  duration {dur:.2f}s  mean_volume {mean_db} dB  size {out.stat().st_size / 1e6:.2f} MB")
+    print(f"[flow-vedio/mux] {out}  duration {dur:.2f}s  mean_volume {mean_db} dB  size {out.stat().st_size / 1e6:.2f} MB")
 
 
 if __name__ == "__main__":

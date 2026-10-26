@@ -303,6 +303,18 @@ function subtitle(t) {
   ctx.restore();
 }
 
+function sourceTag(t) {
+  const l = TL.lines.find((x) => t >= x.start - 0.15 && t <= x.end + 0.15);
+  if (!l || !l.source) return;
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.font = `500 18px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText(l.source, W - 60, 40);
+  ctx.restore();
+}
+
 function footer(t) {
   ctx.save();
   ctx.globalAlpha = 0.55 * ease(prog(t, 0.5, 1.2));
@@ -450,6 +462,7 @@ function render(t) {
 
   card(t);
   subtitle(t);
+  sourceTag(t);
   footer(t);
 }
 

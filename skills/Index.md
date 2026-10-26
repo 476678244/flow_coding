@@ -27,7 +27,7 @@ Flow Coding 技能目录。先读 [Soul.md](Soul.md) 与 [Agents.md](Agents.md)�
 
 环境层    markdown-preview-obsidian（编辑器环境配置，不在交付管道上）
 
-内容层    flow_coding_vedio（代码出讲解视频，不在交付管道上）
+内容层    flow-vedio（代码出讲解视频，不在交付管道上）
 ```
 
 图例：✅ 可跑（有 `SKILL.md`）。愿望不要标 ✅。
@@ -91,7 +91,7 @@ once / keep：[templates/tests.md](flow-coding-software-engineering/templates/te
 
 | 夹 | 作用 | 状态 |
 | --- | --- | --- |
-| [flow_coding_vedio/](flow_coding_vedio/SKILL.md) | 脚本 → TTS 时间轴 → Canvas `render(t)` → 无头 Chrome 逐帧 → 抽静帧看图自检 → ffmpeg 成片。样例 [examples/corner_defense/](flow_coding_vedio/examples/corner_defense/) | ✅ |
+| [flow-vedio/](flow-vedio/SKILL.md) | 脚本 + 导演卡 → TTS 时间轴 → Canvas `render(t)`（早一帧切、错峰进场）→ 无头 Chrome 逐帧 → 静帧按卡评审 + 冻帧检测 → ffmpeg 成片。样例 [examples/corner_defense/](flow-vedio/examples/corner_defense/) | ✅ |
 
 ## 尚未做
 

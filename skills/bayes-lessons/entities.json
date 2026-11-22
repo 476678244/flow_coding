@@ -1,0 +1,14 @@
+[
+  {"id": "fact", "name": "事实", "stores": true, "role": "input", "rule": "已经存在，并且正在对这件事起作用。note 的默认 kind"},
+  {"id": "difference", "name": "差异", "stores": true, "role": "input", "rule": "同一柜里奇怪、还没改掉这一类定性的那块石头。一搜就有的共性不收"},
+  {"id": "bayesian", "name": "贝叶斯级别的事实", "stores": true, "role": "input", "rule": "已经发生，并且大到改掉这一类的定性。note 必须带 --overturns 写明改掉的那句定性；说不清就只是 fact"},
+  {"id": "uncertain", "name": "问号", "stores": true, "role": "mark", "rule": "吃不准是不是事实。--uncertain，kind 不变。同柜下一条对不上就 --retracts"},
+  {"id": "human", "name": "人说/人做", "stores": true, "role": "source", "rule": "--human --quote 原话。只记人做过的决定、纠正、否掉、坚持，以及原话；不记推出来的性格"},
+  {"id": "link", "name": "认知", "stores": true, "role": "output", "rule": "想过的一句，或两块石头的差。link 必须 --based-on 活着的事实 id；更深的一句用 --supersedes 替换。recall 单列为 links_not_prior，重算时不当输入"},
+  {"id": "opinion", "name": "观点", "stores": false, "role": "output", "rule": "对事实的解释。要留就写成 link，不写成 note"},
+  {"id": "expression", "name": "表达", "stores": false, "role": "output", "rule": "别人把事情说得生动的那一层。不入库"},
+  {"id": "path", "name": "路径", "stores": false, "role": "output", "rule": "逻辑链、公式、成功传记里那条唯一的路。不记"},
+  {"id": "common", "name": "共性", "stores": false, "role": "output", "rule": "一搜就有的答案，例如 README 写的仓库是什么。不进库"},
+  {"id": "prior", "name": "先验", "stores": false, "role": "computed", "rule": "同一柜里还活着的全部事实。recall --tag 倒出来的那张表"},
+  {"id": "posterior", "name": "后验", "stores": false, "role": "computed", "rule": "这次把整柜摊开重算的判断。说完即弃；值得留的那一句写成 link"}
+]

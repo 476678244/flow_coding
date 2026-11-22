@@ -1,0 +1,7 @@
+BEFORE absent
+.................                                                        [100%]
+17 passed in 0.52s
+AFTER_PYTEST absent
+{"about": "打开 /bayes-lessons 时，.bayes_lessons 什么时候出现？", "observations": []}
+AFTER_RECALL meta
+AFTER_RECALL no-facts

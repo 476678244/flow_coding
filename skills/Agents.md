@@ -4,6 +4,8 @@
 
 产品仓若另有根 `Soul.md` / `Agents.md` / `features/Agents.md`，先读那些再改产品；**选技能、嵌套、once/keep、自愈预算**以本目录为准。冲突时：点名的 `SKILL.md` > 本文件 > 记忆。
 
+根上的三件套若写明本仓已启用 `/bayes-lessons`，在该仓库工作的每一轮都按那份 `Agents.md`：开工 `recall` 倒出相关柜子，收工 `note`（原文片段作出处）/ `link`（不当先验）。这不是第九段管道。
+
 ## 你在做什么
 
 把 Flow Coding 收成可点名执行的技能，让人不必离开对话窗口。
@@ -34,6 +36,8 @@ Soul.md → 本文件 → Index.md → 被点名的 SKILL.md
 | 夹已有（或先建夹）再落地 | [`/new_feature_pick_and_implement`](new_feature_pick_and_implement/SKILL.md) |
 | 已有产品的洞（看见了但下一步断了） | [`/new_bug_fix`](new_bug_fix/SKILL.md)，不开新主题夹 |
 | 洞已交付，问设计为何没防住 | [`/self-reflect-after-bug-fix`](self-reflect-after-bug-fix/SKILL.md) |
+| 为一个仓库做第一次建立 | [`/bayes-lessons-setup`](bayes-lessons-setup/SKILL.md)，不进八段 |
+| 仓库已启用，记事实、调事实 | [`/bayes-lessons`](bayes-lessons/SKILL.md)，不进八段 |
 | 页面美不美 → 要定版 demo | [`/ui-design-roundtable`](ui-design-roundtable/SKILL.md)，build 前停 |
 | 跑 Playwright / 截图 / 5 阶段 | [`flow_coding_testing`](flow_coding_testing/SKILL.md) |
 | 三路日志、三角定位 | [`flow_coding_logging`](flow_coding_logging/SKILL.md) |

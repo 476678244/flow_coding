@@ -16,6 +16,7 @@ Flow Coding 技能目录。先读 [Soul.md](Soul.md) 与 [Agents.md](Agents.md)�
 
 ```
 学习层    self-reflect-after-bug-fix
+认知层    bayes-lessons-setup → bayes-lessons（不在交付八段上）
                 ↑ deliver 关账后上来（默认）
 交付层    classify → define → plan → build → verify → review → QA_Check → deliver
             │         │         └────────── new_feature_pick_and_implement ──────────┘
@@ -59,6 +60,15 @@ once / keep：[templates/tests.md](flow-coding-software-engineering/templates/te
 
 正文落在出洞夹 `track/bug-…/reflection.md` 与 `self-reflect.md`。
 
+### 认知层
+
+不在交付八段上。点名之后，在**被打开的那个仓库**里记事实。
+
+| 夹 | 作用 | 状态 |
+| --- | --- | --- |
+| [bayes-lessons-setup/](bayes-lessons-setup/SKILL.md) | 启用 Nicole × 本仓的一份库：`scripts/setup.py` 打开 `.bayes_lessons/`、生成元数据框架 `template.md`；填框架、定柜子、第一次 investigate 捕捉事件数据 | ✅ |
+| [bayes-lessons/](bayes-lessons/SKILL.md) | agent 的贝叶斯大脑：按柜子 `recall --tag` 整柜重算；`note` 用原文片段作出处；`link` 存认知不当先验；一个人 + 一个仓库一份库，元数据框架 `template.md` | ✅ |
+
 ### 设计（交付前停）
 
 | 夹 | 作用 | 状态 |
@@ -95,7 +105,7 @@ once / keep：[templates/tests.md](flow-coding-software-engineering/templates/te
 
 ## 尚未做
 
-- 根目录尚未写仓库级 Soul / Agents / Index——产品宪章暂以 README 为准
+- 根上的 [Soul.md](../Soul.md)、[Agents.md](../Agents.md)、[Index.md](../Index.md) 已启用 `/bayes-lessons`。交付管道仍以本目录为准
 - 不要擅自加「智能选技能」或第十条管道
 
 新技能：新夹 + `SKILL.md` + 本表占行。路由变了改 [Agents.md](Agents.md)。身份变了改 [Soul.md](Soul.md)。

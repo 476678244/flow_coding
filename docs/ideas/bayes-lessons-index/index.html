@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贝叶斯样本库 · 五版对照</title>
+<style>
+
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  background: #f6f4f0;
+  color: #1c1915;
+  font: 14px/1.35 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+.bar { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid #ddd6cc; background: #fff; }
+.bar a { padding: 0.75rem 0.95rem; color: inherit; text-decoration: none; }
+.bar a[aria-current="page"] { background: #1c1915; color: #fff; }
+.bar a:focus-visible { outline: 2px solid #143f86; outline-offset: -2px; }
+iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+
+</style>
+</head>
+<body>
+<nav class="bar" aria-label="五版"><a href="index-tags.html" target="_top">标签这一轮</a><a target="stage" href="01-monet.html" aria-current="page">莫奈 · 光</a><a target="stage" href="02-zhang.html">张大千 · 疏密</a><a target="stage" href="03-norman.html">Norman · 找得到</a><a target="stage" href="04-tufte.html">Tufte · 数据</a><a target="stage" href="05-rams.html">Rams · 少</a></nav>
+<iframe name="stage" title="设计稿" src="01-monet.html"></iframe>
+<script>
+document.querySelectorAll('a[target="stage"]').forEach(function (link) {
+  link.addEventListener('click', function () {
+    document.querySelectorAll('a[target="stage"]').forEach(function (other) {
+      other.removeAttribute('aria-current');
+    });
+    link.setAttribute('aria-current', 'page');
+  });
+});
+</script>
+</body>
+</html>

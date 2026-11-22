@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贝叶斯大脑 · Nicole × flow_coding</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #fff;
+  color: #141414;
+  font: 15px/1.35 Palatino, "Iowan Old Style", "Songti SC", serif;
+}
+a.tag, a.all { color: inherit; text-decoration: none; }
+a.tag:hover, a.all:hover { text-decoration: underline; text-underline-offset: 0.18em; }
+a:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
+.layout { display: grid; grid-template-columns: 17rem minmax(0, 1fr); min-height: 100vh; }
+.layout.single { display: block; }
+.layout.single main { max-width: 48rem; }
+.taglist {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow: auto;
+  padding: 0.8rem 0.75rem 2rem;
+  border-right: 1px solid #e4e4e4;
+  background: #fff;
+  font: 13px/1.35 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+.taglist a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.38rem 0.2rem;
+  color: #141414;
+}
+body:not(:has(.pick:target)) .taglist a.all {
+  font-weight: 700;
+  box-shadow: inset 2px 0 0 #141414;
+  padding-left: 0.45rem;
+}
+.taglist a.child { padding-left: 1rem; }
+.taglist a.lens { color: #8a4b00; }
+.taglist a.lens + a.tag:not(.lens) { margin-top: 0.4rem; border-top: 1px solid #e4e4e4; }
+.pick { position: absolute; width: 0; height: 0; overflow: hidden; }
+.taglist .qlabel { overflow-wrap: anywhere; }
+.taglist .qcount { font-variant-numeric: tabular-nums; color: #333; }
+main { padding: 1.25rem 1.4rem 3rem; min-width: 0; }
+header.sky { margin-bottom: 1rem; }
+h1 { font-size: 1.12rem; font-weight: 600; margin: 0; }
+.lead { margin: 0.2rem 0 0; font-size: 0.95rem; }
+.questions { display: block; }
+section { min-width: 0; scroll-margin-top: 0.6rem; }
+.qh {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+  border-bottom: 1px solid #141414;
+  padding-bottom: 0.15rem;
+}
+h2 { flex: 1; min-width: 0; font-size: 0.98rem; line-height: 1.3; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+h2 a.tag { font-weight: 600; color: #141414; }
+.n { flex: none; font: 12px/1 ui-monospace, "SF Mono", Menlo, monospace; }
+article {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  column-gap: 0.7rem;
+  row-gap: 0.08rem;
+  padding: 0.28rem 0 0.22rem;
+  border-top: 1px solid #e4e4e4;
+}
+article[data-kind="fact"] { background: linear-gradient(90deg, rgba(236, 196, 112, 0.62), rgba(255, 255, 255, 0) 78%); }
+article[data-kind="difference"] { background: linear-gradient(90deg, rgba(150, 194, 182, 0.66), rgba(255, 255, 255, 0) 78%); }
+article[data-kind="bayesian"] { background: linear-gradient(90deg, rgba(214, 128, 64, 0.55), rgba(255, 255, 255, 0) 80%); }
+article[data-kind="link"] { background: linear-gradient(90deg, rgba(160, 160, 170, 0.35), rgba(255, 255, 255, 0) 78%); }
+article[data-state="retracted"] { background: linear-gradient(90deg, rgba(148, 144, 136, 0.38), rgba(255, 255, 255, 0) 78%); }
+article[data-state="retracted"] h3 { text-decoration: line-through; color: #555; }
+blockquote { grid-column: 2; margin: 0.1rem 0; padding-left: 0.5rem; border-left: 2px solid #ccc; font-size: 0.85rem; color: #333; overflow-wrap: anywhere; }
+.lost { color: #b00020; }
+.moved { color: #555; }
+.over { grid-column: 2; margin: 0; font: 11px/1.35 ui-monospace, "SF Mono", Menlo, monospace; }
+.meta { display: contents; }
+.kind, .fid { font: 11px/1.35 ui-monospace, "SF Mono", Menlo, monospace; text-align: right; color: #222; }
+.kind { grid-column: 1; grid-row: 1; }
+.fid { grid-column: 1; grid-row: 2 / span 2; }
+h3 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+a.evidence, span.evidence {
+  grid-column: 2;
+  min-width: 0;
+  font: 11px/1.35 ui-monospace, "SF Mono", Menlo, monospace;
+  color: #222;
+  overflow-wrap: anywhere;
+}
+.withdrawn { grid-column: 2; margin: 0.08rem 0 0; font: 11px/1.35 ui-monospace, "SF Mono", Menlo, monospace; }
+.rowtags {
+  grid-column: 2;
+  margin: 0;
+  font: 11px/1.35 ui-monospace, "SF Mono", Menlo, monospace;
+  color: #222;
+}
+.qmark { margin-left: 0.3rem; }
+.empty { margin: 0.4rem 0 0; }
+body:has(.pick:target) #bags article { display: none; }
+body:has(#q-0:target) .taglist a[href="#q-0"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-0:target) #bags article[data-i="3"]{display:grid;}
+body:has(#q-0:target) #bags article[data-i="16"]{display:grid;}
+body:has(#q-0:target) #bags article[data-i="22"]{display:grid;}
+body:has(#q-1:target) .taglist a[href="#q-1"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-2:target) .taglist a[href="#q-2"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-2:target) #bags article[data-i="0"]{display:grid;}
+body:has(#q-2:target) #bags article[data-i="1"]{display:grid;}
+body:has(#q-2:target) #bags article[data-i="2"]{display:grid;}
+body:has(#q-2:target) #bags article[data-i="3"]{display:grid;}
+body:has(#q-2:target) #bags article[data-i="25"]{display:grid;}
+body:has(#q-2:target) #bags article[data-i="28"]{display:grid;}
+body:has(#q-3:target) .taglist a[href="#q-3"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-3:target) #bags article[data-i="1"]{display:grid;}
+body:has(#q-3:target) #bags article[data-i="2"]{display:grid;}
+body:has(#q-3:target) #bags article[data-i="3"]{display:grid;}
+body:has(#q-4:target) .taglist a[href="#q-4"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-4:target) #bags article[data-i="0"]{display:grid;}
+body:has(#q-4:target) #bags article[data-i="28"]{display:grid;}
+body:has(#q-5:target) .taglist a[href="#q-5"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-5:target) #bags article[data-i="25"]{display:grid;}
+body:has(#q-6:target) .taglist a[href="#q-6"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-6:target) #bags article[data-i="4"]{display:grid;}
+body:has(#q-6:target) #bags article[data-i="8"]{display:grid;}
+body:has(#q-6:target) #bags article[data-i="9"]{display:grid;}
+body:has(#q-6:target) #bags article[data-i="12"]{display:grid;}
+body:has(#q-6:target) #bags article[data-i="15"]{display:grid;}
+body:has(#q-6:target) #bags article[data-i="19"]{display:grid;}
+body:has(#q-6:target) #bags article[data-i="24"]{display:grid;}
+body:has(#q-7:target) .taglist a[href="#q-7"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-7:target) #bags article[data-i="4"]{display:grid;}
+body:has(#q-7:target) #bags article[data-i="8"]{display:grid;}
+body:has(#q-7:target) #bags article[data-i="9"]{display:grid;}
+body:has(#q-7:target) #bags article[data-i="12"]{display:grid;}
+body:has(#q-7:target) #bags article[data-i="15"]{display:grid;}
+body:has(#q-7:target) #bags article[data-i="19"]{display:grid;}
+body:has(#q-7:target) #bags article[data-i="24"]{display:grid;}
+body:has(#q-8:target) .taglist a[href="#q-8"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-8:target) #bags article[data-i="5"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="6"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="10"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="13"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="16"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="17"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="20"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="22"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="23"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="26"]{display:grid;}
+body:has(#q-8:target) #bags article[data-i="29"]{display:grid;}
+body:has(#q-9:target) .taglist a[href="#q-9"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-9:target) #bags article[data-i="5"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="6"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="10"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="13"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="16"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="17"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="20"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="22"]{display:grid;}
+body:has(#q-9:target) #bags article[data-i="26"]{display:grid;}
+body:has(#q-10:target) .taglist a[href="#q-10"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-10:target) #bags article[data-i="7"]{display:grid;}
+body:has(#q-10:target) #bags article[data-i="11"]{display:grid;}
+body:has(#q-10:target) #bags article[data-i="14"]{display:grid;}
+body:has(#q-10:target) #bags article[data-i="18"]{display:grid;}
+body:has(#q-10:target) #bags article[data-i="21"]{display:grid;}
+body:has(#q-10:target) #bags article[data-i="27"]{display:grid;}
+body:has(#q-11:target) .taglist a[href="#q-11"]{font-weight:700;box-shadow:inset 2px 0 0 #141414;padding-left:0.45rem;}
+body:has(#q-11:target) #bags article[data-i="7"]{display:grid;}
+body:has(#q-11:target) #bags article[data-i="11"]{display:grid;}
+body:has(#q-11:target) #bags article[data-i="14"]{display:grid;}
+body:has(#q-11:target) #bags article[data-i="18"]{display:grid;}
+body:has(#q-11:target) #bags article[data-i="21"]{display:grid;}
+body:has(#q-11:target) #bags article[data-i="27"]{display:grid;}
+@media (max-width: 800px) {
+  .layout { display: block; }
+  .taglist { position: relative; max-height: 14rem; border-right: 0; border-bottom: 1px solid #e4e4e4; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="taglist" aria-label="柜子"><a class="all" href="#top"><span class="qlabel">全部</span><span class="qcount">30</span></a><a class="tag lens" href="#q-0" title="difference 与 bayesian：同柜里不一样的那几块"><span class="qlabel">七彩</span><span class="qcount">3</span></a><a class="tag lens" href="#q-1" title="吃不准的石头，可能是小乌龟，等同柜下一条来验"><span class="qlabel">问号</span><span class="qcount">0</span></a><a class="tag" href="#q-2" title="Nicole 在 flow_coding 里做过、说过的事：决定、纠正、否掉、坚持，以及原话"><span class="qlabel">Nicole</span><span class="qcount">6</span></a><a class="tag child" href="#q-3" title=""><span class="qlabel">Nicole/决定</span><span class="qcount">3</span></a><a class="tag child" href="#q-4" title=""><span class="qlabel">Nicole/目标</span><span class="qcount">2</span></a><a class="tag child" href="#q-5" title=""><span class="qlabel">Nicole/纠正</span><span class="qcount">1</span></a><a class="tag" href="#q-6" title="看得见的现象：哪个技能、什么时候、人看见了什么、下一步断在哪（事件）"><span class="qlabel">洞</span><span class="qcount">7</span></a><a class="tag child" href="#q-7" title=""><span class="qlabel">洞/bayes-lessons</span><span class="qcount">7</span></a><a class="tag" href="#q-8" title="定位到的、正在起作用的原因：哪行代码 / 哪条合同 / 哪条测试把错锁成了对（事实）"><span class="qlabel">根因</span><span class="qcount">11</span></a><a class="tag child" href="#q-9" title=""><span class="qlabel">根因/bayes-lessons</span><span class="qcount">9</span></a><a class="tag" href="#q-10" title="纠错落地：keep 由红转绿、commit、数据迁移（行为）"><span class="qlabel">修复</span><span class="qcount">6</span></a><a class="tag child" href="#q-11" title=""><span class="qlabel">修复/bayes-lessons</span><span class="qcount">6</span></a></nav>
+<main>
+<header class="sky" id="top">
+<h1 data-testid="page-title">贝叶斯大脑 · Nicole × flow_coding</h1>
+<p class="lead" data-testid="lead">格物：左侧每个柜子是事物自己的一类，点开就是这一类按事件时间排成的一张大表，不按记录的日期收纳。七彩：同柜里 difference、bayesian 那几块不一样的石头，点「七彩」只看它们。问号：吃不准的石头，可能是缩在壳里的小乌龟，等同柜下一条来验。灰色 link 是上次想过的一句，只供回看，不作先验。出处按原文片段重新定位，找不到标红。</p>
+</header>
+<div id="bags"><span id="q-0" class="pick"></span><span id="q-1" class="pick"></span><span id="q-2" class="pick"></span><span id="q-3" class="pick"></span><span id="q-4" class="pick"></span><span id="q-5" class="pick"></span><span id="q-6" class="pick"></span><span id="q-7" class="pick"></span><span id="q-8" class="pick"></span><span id="q-9" class="pick"></span><span id="q-10" class="pick"></span><span id="q-11" class="pick"></span><div class="questions"><article data-i="0" data-testid="fact" data-kind="fact" data-state="open" data-tags="Nicole/目标"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-8b426d</span></p><h3 data-testid="claim">2026-11-22 Nicole 说 bayes-lessons 要让 agent 在和她的日常工作里积累关于世界和关于她的事实库，时间越长越值钱</h3><blockquote>我希望 通过 这个skill support AI agent 能够建立自己的 贝叶斯思维， 记录 human（我） 和 Agent 在认识 世界 以及 human的 过程中 逐渐的积累起 自己的贝叶斯 事件库 和 认知</blockquote><span class="evidence" data-testid="evidence">人说 2026-11-22</span><p class="rowtags" data-testid="tags">Nicole/目标</p></article><article data-i="1" data-testid="fact" data-kind="fact" data-state="open" data-tags="Nicole/决定"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-5157fe</span></p><h3 data-testid="claim">2026-11-22 Nicole 选了大脑放全局加各仓库、认知单独一层、只在启用的仓库触发</h3><blockquote>全局+各仓库；要，单独一层；只在启用的仓库</blockquote><span class="evidence" data-testid="evidence">人说 2026-11-22</span><p class="rowtags" data-testid="tags">Nicole/决定</p></article><article data-i="2" data-testid="fact" data-kind="fact" data-state="open" data-tags="Nicole/决定"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-594987</span></p><h3 data-testid="claim">2026-11-22 Nicole 把 v1 旧数据怎么处理交给 agent 决定</h3><blockquote>你来 重新决定</blockquote><span class="evidence" data-testid="evidence">人说 2026-11-22</span><p class="rowtags" data-testid="tags">Nicole/决定</p></article><article data-i="3" data-testid="fact" data-kind="bayesian" data-state="open" data-tags="Nicole/决定"><p class="meta"><span class="kind" data-testid="kind">bayesian</span><span class="fid">2026-W47-7<br>f-17e5a3</span></p><h3 data-testid="claim">Nicole 把库的粒度定为一个人加一个仓库，每个仓库自己一份库，同一个人在不同仓库允许不同认知，以后再让库与库碰撞</h3><blockquote>我希望的是 每个repo 有自己的 库。 未来 我们会进行 贝叶斯认知与 事实在 不同库 之间的 碰撞。 也就是说 粒度是 一个人（Nicole）+ 一个repo 级别的。 一个人 在不同的 repo 允许 不同的认知。</blockquote><span class="evidence" data-testid="evidence">人说 2026-11-22</span><p class="rowtags" data-testid="tags">Nicole/决定</p><p class="over">改掉：Nicole 要大脑放全局加各仓库</p></article><article data-i="4" data-testid="fact" data-kind="fact" data-state="open" data-tags="洞/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-c7f217</span></p><h3 data-testid="claim">recall 换个说法返回 0 条：少一个问号的「美股指数怎么走」取不到「美股指数怎么走？」下的 4 条</h3><blockquote>少一个问号）返回 0 条</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-recall-exact-about/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-recall-exact-about/02-define.md:5</a><p class="rowtags" data-testid="tags">洞/bayes-lessons</p></article><article data-i="5" data-testid="fact" data-kind="fact" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-ea0828</span></p><h3 data-testid="claim">v1 recall 用 about 整句相等过滤，取数钥匙是整句不是类别</h3><blockquote>取数钥匙是整句，不是类别</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-recall-exact-about/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-recall-exact-about/02-define.md:11</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p></article><article data-i="6" data-testid="fact" data-kind="fact" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-f10a8f</span></p><h3 data-testid="claim">v1 keep 把「换说法为空」锁成了正确行为</h3><blockquote>把「换说法为空」锁成了正确行为</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-recall-exact-about/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-recall-exact-about/02-define.md:9</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p></article><article data-i="7" data-testid="fact" data-kind="fact" data-state="open" data-tags="修复/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-456712</span></p><h3 data-testid="claim">按柜子取与 --q 兜底的 keep 转绿</h3><blockquote>def test_recall_q_finds_paraphrase_by_words</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py">flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py:138</a><p class="rowtags" data-testid="tags">修复/bayes-lessons</p></article><article data-i="8" data-testid="fact" data-kind="fact" data-state="open" data-tags="洞/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-e76d67</span></p><h3 data-testid="claim">约 15 条市场事实的出处行号已指向空行或别的内容</h3><blockquote>约 15 条市场事实的出处已指向空行或别的内容</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-evidence-line-drift/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-evidence-line-drift/02-define.md:5</a><p class="rowtags" data-testid="tags">洞/bayes-lessons</p></article><article data-i="9" data-testid="fact" data-kind="fact" data-state="open" data-tags="洞/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-c32af0</span></p><h3 data-testid="claim">v1 复现：weekly.md 顶部插入两周后 recall 仍报 weekly.md:1，而第 1 行已是 26w43</h3><blockquote>- 26w43：新的一周</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-evidence-line-drift/04-build.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-evidence-line-drift/04-build.md:11</a><p class="rowtags" data-testid="tags">洞/bayes-lessons</p></article><article data-i="10" data-testid="fact" data-kind="fact" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-aa1aa0</span></p><h3 data-testid="claim">出处存行号不存原文，note 之后从不复查</h3><blockquote>出处存的是 `相对路径:行`，不是原文</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-evidence-line-drift/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-evidence-line-drift/02-define.md:11</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p></article><article data-i="11" data-testid="fact" data-kind="fact" data-state="open" data-tags="修复/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-2c0ec7</span></p><h3 data-testid="claim">总本插入新周后 line_now 跟到新行的 regression 转绿</h3><blockquote>def test_fact_survives_restart_and_weekly_rewrite</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/test_bayes_lessons_regression.py">flow_coding/features/bayes-lessons/test_bayes_lessons_regression.py:29</a><p class="rowtags" data-testid="tags">修复/bayes-lessons</p></article><article data-i="12" data-testid="fact" data-kind="fact" data-state="open" data-tags="洞/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-9c5458</span></p><h3 data-testid="claim">投资库导出页 81 条里 71 条落进未分类</h3><blockquote>全部 81，未分类 71</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-uncategorized-bags/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-uncategorized-bags/02-define.md:5</a><p class="rowtags" data-testid="tags">洞/bayes-lessons</p></article><article data-i="13" data-testid="fact" data-kind="fact" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-6c7eb4</span></p><h3 data-testid="claim">标签不是记录的必填项，问句 about 过不了标签形状检查</h3><blockquote>标签只用于导出页，不是记录的必填项</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-uncategorized-bags/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-uncategorized-bags/02-define.md:11</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p></article><article data-i="14" data-testid="fact" data-kind="fact" data-state="open" data-tags="修复/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-8c527d</span></p><h3 data-testid="claim">柜子必须先登记的 keep 转绿</h3><blockquote>def test_note_needs_known_cabinet</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py">flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py:63</a><p class="rowtags" data-testid="tags">修复/bayes-lessons</p></article><article data-i="15" data-testid="fact" data-kind="fact" data-state="open" data-tags="洞/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-38c962</span></p><h3 data-testid="claim">flow_coding 22/22 行在讲 bayes-lessons 自己，投资库约 26/81 行是身份、阅读顺序、refactor</h3><blockquote>flow_coding 22/22 行在讲 bayes-lessons 自己</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-meta-in-library/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-meta-in-library/02-define.md:5</a><p class="rowtags" data-testid="tags">洞/bayes-lessons</p></article><article data-i="16" data-testid="fact" data-kind="difference" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">difference</span><span class="fid">2026-W47-7<br>f-95e3a5</span></p><h3 data-testid="claim">没有区分贝叶斯思维的元数据和数据，事件时间不是必填</h3><blockquote>没有区分贝叶斯思维的元数据（方法、规则、模板、库自身文件）和数据（事件）</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-meta-in-library/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-meta-in-library/02-define.md:11</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p></article><article data-i="17" data-testid="fact" data-kind="fact" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-e1acc3</span></p><h3 data-testid="claim">v1 keep 把「仓库自己写明的身份要记」锁成了合同</h3><blockquote>v1 keep 把「仓库自己写明的身份要记」锁成了合同</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-meta-in-library/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-meta-in-library/02-define.md:9</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p></article><article data-i="18" data-testid="fact" data-kind="fact" data-state="open" data-tags="修复/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-fec191</span></p><h3 data-testid="claim">元数据出处被 meta-source 拒绝的 keep 转绿</h3><blockquote>def test_methodology_and_meta_are_not_sources</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py">flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py:303</a><p class="rowtags" data-testid="tags">修复/bayes-lessons</p></article><article data-i="19" data-testid="fact" data-kind="fact" data-state="open" data-tags="洞/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-5fe4a7</span></p><h3 data-testid="claim">v2 中途把 Nicole 柜放在全局，任何仓库 recall 都会倒出它</h3><blockquote>任何仓库 recall 都会倒出它</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-global-brain-granularity/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-global-brain-granularity/02-define.md:5</a><p class="rowtags" data-testid="tags">洞/bayes-lessons</p></article><article data-i="20" data-testid="fact" data-kind="fact" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-65ef65</span></p><h3 data-testid="claim">当时的 regression 锁的是 Nicole 事实跟着 agent 进另一个仓库</h3><blockquote>当时的 regression 锁的是「Nicole 事实跟着 agent 进另一个仓库」</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-global-brain-granularity/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-global-brain-granularity/02-define.md:9</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p></article><article data-i="21" data-testid="fact" data-kind="fact" data-state="open" data-tags="修复/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-995c11</span></p><h3 data-testid="claim">一人一仓一库隔离的 regression 转绿</h3><blockquote>def test_each_repo_keeps_its_own_nicole_and_its_own_cognition</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/test_bayes_lessons_regression.py">flow_coding/features/bayes-lessons/test_bayes_lessons_regression.py:43</a><p class="rowtags" data-testid="tags">修复/bayes-lessons</p></article><article data-i="22" data-testid="fact" data-kind="bayesian" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">bayesian</span><span class="fid">2026-W47-7<br>f-0659ff</span></p><h3 data-testid="claim">把跨仓库都用得上的事放进了全局共享，没问 Nicole 要的粒度</h3><blockquote>没问 Nicole 要的粒度</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-global-brain-granularity/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-global-brain-granularity/02-define.md:11</a><p class="rowtags" data-testid="tags">根因/bayes-lessons</p><p class="over">改掉：跨仓库都用得上的事放全局共享</p></article><article data-i="23" data-testid="link" data-kind="link" data-state="open" data-tags="根因"><p class="meta"><span class="kind">link</span><span class="fid">2026-W47-7<br>l-2ce57a</span></p><h3>三个洞里 keep 都把当时的设计句锁成了合同（换说法为空、身份必记、Nicole 跟进别的仓库）：测试问的是「实现符不符合我写的规则」，没问「人要的下一步还在不在」</h3><p class="rowtags">依据 f-f10a8f, f-e1acc3, f-65ef65 · 不作先验</p></article><article data-i="24" data-testid="fact" data-kind="fact" data-state="open" data-tags="洞/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-b377d6</span></p><h3 data-testid="claim">投资库第一次 investigate 从周报总本批量记了 62 块，laolao 指出不是她和 agent 一起建立的样本</h3><blockquote>批量记了 62 块事件石头</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-material-not-cobuilt/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-material-not-cobuilt/02-define.md:5</a><p class="rowtags" data-testid="tags">洞/bayes-lessons · agent 在长</p></article><article data-i="25" data-testid="fact" data-kind="fact" data-state="open" data-tags="Nicole/纠正"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-9c2ca7</span></p><h3 data-testid="claim">laolao 纠正：素材里的样本不都进库，只记一起讨论过的事件、她纠正 agent 的事、她表达的认知</h3><blockquote>不是所有的素材 捕捉进来的时候 都直接进 贝叶斯样本</blockquote><span class="evidence" data-testid="evidence">人说 2026-11-22</span><p class="rowtags" data-testid="tags">Nicole/纠正 · agent 在长</p></article><article data-i="26" data-testid="fact" data-kind="fact" data-state="open" data-tags="根因/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-71f89a</span></p><h3 data-testid="claim">入库门槛只问是不是事件、能不能贴原文，没问是不是 laolao 和 agent 一起经历过</h3><blockquote>没问「是不是 laolao 和 agent 一起经历过」</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/track/bug-2026-11-22-material-not-cobuilt/02-define.md">flow_coding/features/bayes-lessons/track/bug-2026-11-22-material-not-cobuilt/02-define.md:11</a><p class="rowtags" data-testid="tags">根因/bayes-lessons · agent 在长</p></article><article data-i="27" data-testid="fact" data-kind="fact" data-state="open" data-tags="修复/bayes-lessons"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-dc1721</span></p><h3 data-testid="claim">co-built 门槛的 keep 转绿：素材被拒，共建记录、原话、带讨论原话的材料可入，必须写谁在长</h3><blockquote>def test_co_built_library_refuses_raw_material</blockquote><a class="evidence" data-testid="evidence" href="file:///Users/nicole/workspace/github/a476678244/flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py">flow_coding/features/bayes-lessons/test_bayes_lessons_unit.py:356</a><p class="rowtags" data-testid="tags">修复/bayes-lessons · 一起长</p></article><article data-i="28" data-testid="fact" data-kind="fact" data-state="open" data-tags="Nicole/目标"><p class="meta"><span class="kind" data-testid="kind">fact</span><span class="fid">2026-W47-7<br>f-c5d4df</span></p><h3 data-testid="claim">laolao 定下第一性原理：她与 AI Agent 共同成长，成长的路上谁都不落下</h3><blockquote>第一性原理： nicole(zonghan/laolao)  与 AI Agent 共同成长, 成长的路上 谁都不落下</blockquote><span class="evidence" data-testid="evidence">人说 2026-11-22</span><p class="rowtags" data-testid="tags">Nicole/目标 · 一起长</p></article><article data-i="29" data-testid="link" data-kind="link" data-state="open" data-tags="根因"><p class="meta"><span class="kind">link</span><span class="fid">2026-W47-7<br>l-cee178</span></p><h3>元数据混入、全局大脑、素材当样本这三次，都是 agent 从仓库和系统出发设计（什么都能存、哪里都能用、仓库里有就算），没从「laolao 和 agent 一起经历过什么」出发</h3><p class="rowtags">依据 f-95e3a5, f-0659ff, f-71f89a · 不作先验</p></article></div></div>
+</main>
+</div>
+</body>
+</html>

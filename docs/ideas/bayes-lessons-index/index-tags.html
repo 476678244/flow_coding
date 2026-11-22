@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贝叶斯样本库 · 标签五版</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { display: grid; grid-template-rows: auto 1fr; height: 100vh; background: #fff; color: #141414; font: 14px/1.35 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+.bar { display: flex; flex-wrap: wrap; border-bottom: 1px solid #ddd; background: #fff; }
+.bar a { padding: 0.75rem 0.95rem; color: inherit; text-decoration: none; }
+.bar a[aria-current="page"] { background: #141414; color: #fff; }
+iframe { width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<nav class="bar" aria-label="标签五版"><a href="index.html" target="_top">上一轮</a><a target="stage" href="06-tufte.html">Tufte · 留下</a><a target="stage" href="07-norman.html">Norman · 点开</a><a target="stage" href="08-rams.html">Rams · 不另做</a><a target="stage" href="09-zhang.html">张大千 · 离场</a><a target="stage" href="10-monet.html">莫奈 · 不上色</a><a target="stage" href="11-merge.html" aria-current="page">合稿 · 光与点开</a></nav>
+<iframe name="stage" title="标签设计稿" src="11-merge.html"></iframe>
+<script>
+document.querySelectorAll('a[target="stage"]').forEach(function (link) {
+  link.addEventListener("click", function () {
+    document.querySelectorAll('a[target="stage"]').forEach(function (other) { other.removeAttribute("aria-current"); });
+    link.setAttribute("aria-current", "page");
+  });
+});
+</script>
+</body>
+</html>

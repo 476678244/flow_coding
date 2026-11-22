@@ -1,0 +1,1 @@
+{"schema": 2, "person": "Nicole", "repo": "flow_coding", "admission": "co-built", "cobuilt": ["features/*/track/bug-*/*.md", "features/*/test_*.py", "skills/*/scripts/*.py", "commit"], "aliases": ["zonghan", "laolao"]}

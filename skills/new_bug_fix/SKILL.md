@@ -101,6 +101,20 @@ once vs keep：[templates/tests.md](../flow-coding-software-engineering/template
 
 交人表写完**立刻**打开并完整遵循 [self-reflect-after-bug-fix/SKILL.md](../self-reflect-after-bug-fix/SKILL.md)。目的：反思为什么现有的测试设计 / 系统设计 / log设计 / 架构设计没有提前预防这个 bug。不要等用户再发一次。用户本轮明确说「只要修洞」才停。
 
+## 贝叶斯石头（仓库已启用 `/bayes-lessons` 时）
+
+不是新的一段，挂在已有的段上。柜子和出处按本仓 `.bayes_lessons/template.md`：
+
+| 段 | 记 |
+| --- | --- |
+| classify 前 | `recall --tag 洞 --tag 根因`：同类洞以前怎么来的，当第一次看见 |
+| define 写完 | `note --tag 洞/<技能>`，`--quote` 取 `02-define.md` 的 Symptom |
+| 根因定位 | `note --tag 根因/<技能>`；Coverage gap 也是一块根因 |
+| keep 转绿 / deliver | `note --tag 修复/<技能>`，`--file` 指 keep 测试或 `--commit` |
+| Nicole 纠正 | `--human --quote` 原话，进 `Nicole` 柜 |
+
+只记和 Nicole 一起经历的（本仓 `admission = co-built`）。每块写 `--grows`：agent 被纠正、学到写 `agent`；Nicole 在这次修洞里看见、改变了什么写 `human`；一起定下的写 `both`。
+
 ## 禁止
 
 - 开新主题夹修已有洞；或覆写该夹原有 `track/01–08`  

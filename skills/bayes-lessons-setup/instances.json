@@ -1,0 +1,22 @@
+[
+ {
+  "repo": "flow_coding",
+  "root": "/Users/nicole/workspace/github/a476678244/flow_coding",
+  "library": "/Users/nicole/workspace/github/a476678244/flow_coding/.bayes_lessons",
+  "template": "/Users/nicole/workspace/github/a476678244/flow_coding/.bayes_lessons/template.md",
+  "person": "Nicole",
+  "admission": "co-built",
+  "generated": "2026-11-22",
+  "locked": true
+ },
+ {
+  "repo": "obsidian_wiki_investment",
+  "root": "/Users/nicole/workspace/github/a476678244/obsidian_wiki_investment",
+  "library": "/Users/nicole/workspace/github/a476678244/obsidian_wiki_investment/.bayes_lessons",
+  "template": "/Users/nicole/workspace/github/a476678244/obsidian_wiki_investment/.bayes_lessons/template.md",
+  "person": "Nicole",
+  "admission": "co-built",
+  "generated": "2026-11-22",
+  "locked": true
+ }
+]

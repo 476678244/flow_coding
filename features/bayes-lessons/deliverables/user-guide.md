@@ -25,7 +25,7 @@ S=/Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons-set
 | | 是什么 | 在哪 |
 | --- | --- | --- |
 | **库** | Nicole × 一个仓库。一个仓库一份，互不混 | 仓库根 `.bayes_lessons/` |
-| **元数据** | 怎么想：本库的元数据框架、柜子定义、方法、规则、模板 | `template.md`、`cabinets.json`；SKILL、三件套、讲稿 |
+| **元数据** | 怎么想：本库的元数据框架、柜子定义、方法、规则、模板 | `Agents.md`（给 agent 的入口：照哪两份技能做）、`template.md`、`cabinets.json`；SKILL、三件套、讲稿 |
 | **数据** | 想什么：具体事件（石头）和认知（link） | `brain.jsonl` |
 
 ## 2. 给一个仓库启用

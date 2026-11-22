@@ -74,6 +74,22 @@ B=/Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons/scr
 
 `recall` 不带参数时会给出它的路径；没填完会提示 `hint_template`。**开工先读它。**
 
+**别的 agent 在自己的仓库里只看到 `.bayes_lessons/` 或 `template.md`，也要知道照这两份技能做。**入口有四处，都由 setup 生成：
+- `.bayes_lessons/Agents.md`：给任何 agent 的第一句话；
+- `template.md` 开头的 🧭 块；
+- `meta.json` 的 `skills`（daily / setup / script 三个路径）；
+- `index.html` 顶部的链接。
+
+**template.md 是 agent 技能生成的、锁住的元数据，agent 不改。**
+- 两个方向都有链：template 开头的 🧬 出处块链回 `/bayes-lessons-setup`、骨架、`/bayes-lessons` 和 `bayes.py`（`meta.json` 的 `template_from` 记着从哪份骨架生成）；技能这一侧的 [`../bayes-lessons-setup/instances.md`](../bayes-lessons-setup/instances.md) 链回每一份生成过的库和它的 template。
+- 工作中学到的任何新东西——包括关于 Nicole 的称呼、偏好、纠正——都**记成数据**（`note`），不写进 template。
+- 只有她明确说「改 template / 改框架」时才改。改完跑 `template --approve --quote "她的原话"`：
+  - 记一块 `Nicole/决定`；
+  - 把 sha256 写进 `meta.json`；
+  - 文件设为只读。
+- 没经批准的改动，`recall` 报 `hint_template_changed`，`note` 返回 `warning`，`doctor` 报 `template.changed`。
+- 遇到时：先 `git checkout -- .bayes_lessons/template.md` 恢复，再把那条内容记成数据。
+
 两个例子：
 
 | 仓库 | 要认识什么 | 柜子 | 最自然的记录时机 |
@@ -139,7 +155,9 @@ python3 $B note --tag A股/走势 --when 26w40 --grows both --claim "…" --file
 python3 $B link --tag 根因 --grows both --text "想过的一句" --based-on f-…,f-… [--supersedes l-…]
 python3 $B cabinets --name 柜名 --desc "这一柜比什么"
 python3 $B review [--n 3] [--tag 柜]
-python3 $B doctor                                   # moved / lost / stale_links / lonely_subtags
+python3 $B doctor                                   # template / moved / lost / stale_links / lonely_subtags
+python3 $B template                                 # 看 template.md 锁的状态
+python3 $B template --approve --quote "她要改框架或批准框架的原话"   # 上锁（只在她明确要求时）
 python3 $B export
 ```
 

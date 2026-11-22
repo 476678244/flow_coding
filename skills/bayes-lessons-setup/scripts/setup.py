@@ -16,6 +16,7 @@ OWNER = "476678244"
 LOCAL_ROOT = Path("/Users/nicole/workspace/github/a476678244")
 BAYES_PY = Path(__file__).resolve().parent.parent.parent / "bayes-lessons" / "scripts" / "bayes.py"
 TEMPLATE = Path(__file__).resolve().parent.parent / "templates" / "template.md"
+LIBRARY_AGENTS = Path(__file__).resolve().parent.parent / "templates" / "library-agents.md"
 
 MARK = "bayes-lessons v2"
 
@@ -85,7 +86,8 @@ def main(argv=None, cwd=None):
         return 2
     if write_admission(root / repo_dir_name(), opts):
         wrote.append(f"{repo_dir_name()}/meta.json")
-    print(json.dumps({"status": "ready", "root": str(root), "origin": origin or "", "wrote": wrote, "needs_migration": plan["needs_migration"]}, ensure_ascii=False))
+    registry = register_instance(root, root / repo_dir_name())
+    print(json.dumps({"status": "ready", "root": str(root), "origin": origin or "", "wrote": wrote, "needs_migration": plan["needs_migration"], "registered": registry}, ensure_ascii=False))
     return 0
 
 
@@ -116,6 +118,55 @@ def parse_args(argv):
     if opts["admission"] not in (None, "co-built", "open"):
         return None
     return opts
+
+
+SETUP_SKILL = Path(__file__).resolve().parent.parent / "SKILL.md"
+BAYES_SKILL = BAYES_PY.parent.parent / "SKILL.md"
+
+
+def fill_template(text, person, repo):
+    for key, value in {"@@PERSON@@": person, "@@REPO@@": repo, "@@SETUP_SKILL@@": str(SETUP_SKILL),
+                       "@@SKELETON@@": str(TEMPLATE), "@@BAYES_SKILL@@": str(BAYES_SKILL), "@@BAYES_PY@@": str(BAYES_PY)}.items():
+        text = text.replace(key, value)
+    return text
+
+
+def instances_path():
+    """技能这一侧的回链：它生成过哪些库。测试用 BAYES_INSTANCES 指到别处。"""
+    override = os.environ.get("BAYES_INSTANCES")
+    return Path(override) if override else Path(__file__).resolve().parent.parent / "instances.json"
+
+
+def register_instance(root, bayes):
+    path = instances_path()
+    rows = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    meta = json.loads((bayes / "meta.json").read_text(encoding="utf-8")) if (bayes / "meta.json").is_file() else {}
+    row = {"repo": root.name, "root": str(root), "library": str(bayes), "template": str(bayes / "template.md"),
+           "person": meta.get("person", "Nicole"), "admission": meta.get("admission", "open"),
+           "generated": (meta.get("template_from") or {}).get("generated") or (meta.get("template_from") or {}).get("backfilled", ""),
+           "locked": bool(meta.get("template_sha256"))}
+    rows = [r for r in rows if r.get("library") != row["library"]] + [row]
+    rows.sort(key=lambda r: r["library"])
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    lines = [
+        "# bayes-lessons-setup · 生成过的库（回链）",
+        "",
+        "> 由 `scripts/setup.py` 自动维护，不手改。每次 setup 跑完都会更新这一张表。",
+        "> 每一份 `template.md` 开头的 🧬 出处链到本技能；本表从技能这一侧链回每一份库。",
+        "",
+        "| 仓库 | 人 | 门槛 | 元数据框架 | 上锁 | 生成 |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for r in rows:
+        lines.append(f"| {r['repo']} | {r['person']} | {r['admission']} | [template.md](file://{r['template']}) | {'是' if r['locked'] else '否'} | {r['generated']} |")
+    path.with_suffix(".md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return str(path.with_suffix(".md"))
+
+
+def template_from():
+    import hashlib
+    return {"skill": str(SETUP_SKILL), "skeleton": str(TEMPLATE),
+            "skeleton_sha256": hashlib.sha256(TEMPLATE.read_bytes()).hexdigest(), "generated": __import__("datetime").date.today().isoformat()}
 
 
 def write_admission(bayes, opts):
@@ -212,6 +263,8 @@ def build_plan(root):
         would.append(f"{bayes.name}/cabinets.json")
     if not (bayes / "template.md").is_file():
         would.append(f"{bayes.name}/template.md")
+    if not (bayes / "Agents.md").is_file():
+        would.append(f"{bayes.name}/Agents.md")
     page_actions = []
     if not pages:
         page_actions.append({"path": "Index.md", "action": "create"})
@@ -293,10 +346,23 @@ def apply_plan(root, plan):
     frame = bayes / "template.md"
     if not frame.is_file():
         person = os.environ.get("BAYES_PERSON", "Nicole")
-        text = TEMPLATE.read_text(encoding="utf-8").replace("@@PERSON@@", person).replace("@@REPO@@", root.name)
+        text = fill_template(TEMPLATE.read_text(encoding="utf-8"), person, root.name)
         bayes.mkdir(parents=True, exist_ok=True)
         frame.write_text(text, encoding="utf-8")
         wrote.append(f"{bayes.name}/template.md")
+        meta_path = bayes / "meta.json"
+        meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else {}
+        meta_path.write_text(json.dumps({**meta, "template_from": template_from()}, ensure_ascii=False) + "\n", encoding="utf-8")
+    guide = bayes / "Agents.md"
+    meta_path = bayes / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else {}
+    person = meta.get("person") or os.environ.get("BAYES_PERSON", "Nicole")
+    if not guide.is_file():
+        guide.write_text(fill_template(LIBRARY_AGENTS.read_text(encoding="utf-8"), person, root.name), encoding="utf-8")
+        wrote.append(f"{bayes.name}/Agents.md")
+    skills = {"daily": str(BAYES_SKILL), "setup": str(SETUP_SKILL), "script": str(BAYES_PY)}
+    if meta.get("skills") != skills:
+        meta_path.write_text(json.dumps({**meta, "skills": skills}, ensure_ascii=False) + "\n", encoding="utf-8")
     cabs = bayes / "cabinets.json"
     if not cabs.is_file() or json.loads(cabs.read_text(encoding="utf-8") or "[]") == []:
         proc = subprocess.run(

@@ -31,8 +31,11 @@ python3 $S --admission co-built --cobuilt "共建记录通配" [--cobuilt …] -
 - 只接受 origin 指向 GitHub `476678244`，或者没有 origin 且在 `/Users/nicole/workspace/github/a476678244/` 下的仓库。其它一律拒绝，不建目录。
 - 脚本会写这些：
   - `.bayes_lessons/meta.json`、`cabinets.json`（空时预置 `Nicole` 柜）、`index.html`；
-  - **`template.md`**：从本技能 `templates/template.md` 生成，填好 person 和 repo；
+  - **`template.md`**：从本技能 `templates/template.md` 生成，填好 person 和 repo；开头写上 🧬 出处，链回本技能、骨架、`/bayes-lessons` 和 `bayes.py`。`meta.json` 里记 `template_from`（技能、骨架路径、骨架 sha256、生成日期）；
+  - **`.bayes_lessons/Agents.md`**：给任何 agent 的入口。它写明：先照 `/bayes-lessons` 和 `/bayes-lessons-setup` 这两份技能做（给出 flow_coding 里的绝对路径）；目录里每个文件是什么；哪些不能手改。
+  - `meta.json` 的 `skills`：写入技能和脚本的路径，每次 setup 都会刷新。
   - 已有的页面目录、`Soul.md`、`Agents.md` 里补启用说明（带 `bayes-lessons v2` 标记）。
+- 回链：每次跑完都把这份库登记进本技能的 [`instances.md`](instances.md)（机器清单 `instances.json`），技能这一侧就能链回每一份 template。
 - 脚本不写 `brain.jsonl`。
 - 想先试、不动原来那份库：加 `BAYES_REPO_DIR=.bayes_lessons_template`。
 
@@ -50,7 +53,7 @@ python3 $S --admission co-built --cobuilt "共建记录通配" [--cobuilt …] -
 5. **什么时候记**：本仓最自然的那一刻。例如投资库是「每周校准总本之后」，技能仓是「`/new_bug_fix` 的 define、根因、keep 转绿」。
 6. **认知从哪来**：哪种工作会产出比过去更深的一句。
 
-填完后，`recall` 就不再给 `hint_template`。拿不准就问 Nicole，不要编。
+填完给 Nicole 看，她点头后上锁：`python3 /Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons/scripts/bayes.py template --approve --quote "她的原话"`。上锁之后 template 是不可改的元数据，以后学到的东西一律记成数据。拿不准就问 Nicole，不要编。
 
 ## 3. 登记柜子
 

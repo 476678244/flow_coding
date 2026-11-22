@@ -10,6 +10,7 @@ admission=co-built 的库只收两人一起经历过的：她的原话、共建�
 """
 
 import fnmatch
+import hashlib
 import html
 import json
 import os
@@ -24,7 +25,7 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parent.parent
 ENTITIES_PATH = SKILL_DIR / "entities.json"
 EXPORT_TEMPLATE = SKILL_DIR / "templates" / "export.html"
-VERBS = ("recall", "note", "link", "review", "cabinets", "doctor", "export", "entities")
+VERBS = ("recall", "note", "link", "review", "cabinets", "doctor", "export", "entities", "template")
 INFERENCE = (
     "因此", "所以", "这说明", "说明了", "意味着", "我认为", "我觉得", "应该", "概率",
     "相当于", "共识", "预计", "或将", "有望", "可能会", "大概率", "估计",
@@ -93,6 +94,21 @@ def balance_hint(rows, meta):
     if sides == {"human"}:
         return f"最近 {BALANCE_WINDOW} 块都是 {person} 在长：agent 这次被纠正了什么、学到了什么"
     return None
+
+
+def template_state(store):
+    """template.md 是元数据框架：上锁后按 meta.json 的 template_sha256 校验。"""
+    frame = store.folder / "template.md"
+    if not frame.is_file():
+        return {"exists": False, "locked": False, "changed": False}
+    sha = hashlib.sha256(frame.read_bytes()).hexdigest()
+    locked = store.meta().get("template_sha256")
+    return {"exists": True, "locked": bool(locked), "changed": bool(locked) and locked != sha, "sha256": sha}
+
+
+TEMPLATE_CHANGED = ("template.md 被改过，没有经过 {person} 批准：它是元数据框架，不是记事本。"
+                    "先恢复它（git checkout -- .bayes_lessons/template.md），把新学到的记成数据（note）；"
+                    "只有 {person} 明确要改框架时，才改并 template --approve --quote 她的原话")
 
 
 SMALL_SAMPLE = 5
@@ -485,6 +501,12 @@ def cmd_cabinets(ctx, opts):
                     body["hint_template"] = "缺 template.md（本库的元数据框架）：先跑 /bayes-lessons-setup"
                 elif "<填" in frame.read_text(encoding="utf-8"):
                     body["hint_template"] = "template.md 还有 <填>：先把本库的元数据框架填完，再记数据"
+                state = template_state(store)
+                body["template_locked"] = state["locked"]
+                if state["changed"]:
+                    body["hint_template_changed"] = TEMPLATE_CHANGED.format(person=store.meta().get("person", "Nicole"))
+                elif state["exists"] and not state["locked"] and "hint_template" not in body:
+                    body["hint_template"] = "template.md 还没上锁：请 " + store.meta().get("person", "Nicole") + " 确认后跑 template --approve --quote 她的原话"
             return out(body)
         name, desc = opts["name"], opts.get("desc", "").strip()
         if not tag_ok(name) or "/" in name:
@@ -599,6 +621,7 @@ def cmd_note(ctx, opts):
         return out({
             "id": record["id"], "status": "stored", "store": store.scope, "line": source.get("line"),
             "look_back": [{"id": r["id"], "when": when_key(r), "claim": r["claim"]} for r in order(same)[-5:]],
+            **({"warning": TEMPLATE_CHANGED.format(person=meta.get("person", "Nicole"))} if template_state(store)["changed"] else {}),
         })
     except Corrupt as exc:
         return reject("corrupt", at=str(exc))
@@ -742,8 +765,53 @@ def cmd_doctor(ctx, opts):
                     if "/" in t:
                         counts[t] = counts.get(t, 0) + 1
         lonely = sorted(t for t, n in counts.items() if n == 1)
-        return out({"checked": len(notes) - len(retracted & set(by_id)), "moved": moved, "lost": lost,
+        store = ctx.store()
+        tstate = {k: v for k, v in template_state(store).items() if k != "sha256"} if store else None
+        return out({"checked": len(notes) - len(retracted & set(by_id)), "template": tstate, "moved": moved, "lost": lost,
                     "stale_links": stale, "lonely_subtags": lonely})
+    except Corrupt as exc:
+        return reject("corrupt", at=str(exc))
+
+
+def cmd_template(ctx, opts):
+    """template --status：看锁；template --approve --quote "她的原话"：她批准当前框架，记一块石头并上锁。"""
+    try:
+        store = ctx.store()
+        if store is None:
+            return reject("repo-not-enabled")
+        frame = store.folder / "template.md"
+        if not frame.is_file():
+            return reject("no-template")
+        if "approve" not in opts:
+            state = template_state(store)
+            return out({k: v for k, v in state.items() if k != "sha256"})
+        quote = opts.get("quote", "").strip()
+        if not quote:
+            return reject("no-quote", hint="上锁要有她批准或要求改框架的原话")
+        if "<填" in frame.read_text(encoding="utf-8"):
+            return reject("template-unfilled")
+        meta = store.meta()
+        sha = hashlib.sha256(frame.read_bytes()).hexdigest()
+        cabs = {c["name"] for c in store.cabinets()}
+        person = meta.get("person", "Nicole")
+        stone = None
+        if person in cabs:
+            rows = ctx.all_rows()
+            stone = {"op": "note", "id": new_id("f", rows), "ts": now(), "tags": [f"{person}/决定"],
+                     "claim": f"{person} 批准本库元数据框架 template.md 并上锁（sha256 {sha[:12]}）",
+                     "kind": "fact", "source": {"type": "human", "quote": quote, "date": now()[:10]},
+                     "when": parse_when(now()[:10]), "grows": "both"}
+            if ctx.root:
+                stone["repo"] = ctx.root.name
+            store.append(stone)
+        origin = meta.get("template_from") or {
+            "skill": str(SKILL_DIR.parent / "bayes-lessons-setup" / "SKILL.md"),
+            "skeleton": str(SKILL_DIR.parent / "bayes-lessons-setup" / "templates" / "template.md"),
+            "backfilled": now()[:10]}
+        (store.folder / "meta.json").write_text(json.dumps({**meta, "template_sha256": sha, "template_from": origin}, ensure_ascii=False) + "\n", encoding="utf-8")
+        frame.chmod(0o444)
+        export_store(ctx, store)
+        return out({"status": "locked", "sha256": sha, "stone": stone["id"] if stone else None})
     except Corrupt as exc:
         return reject("corrupt", at=str(exc))
 
@@ -780,6 +848,14 @@ def evidence_html(source, status):
     if source.get("type") == "web":
         return f'<a class="evidence" data-testid="evidence" href="{html.escape(source["url"], quote=True)}">{label}</a>'
     return f'<span class="evidence" data-testid="evidence">{label}</span>'
+
+
+def follow_html():
+    daily = SKILL_DIR / "SKILL.md"
+    setup = SKILL_DIR.parent / "bayes-lessons-setup" / "SKILL.md"
+    return (f'agent 照技能做：每一轮 <a href="file://{html.escape(str(daily), quote=True)}">/bayes-lessons</a>；'
+            f'启用、重建 <a href="file://{html.escape(str(setup), quote=True)}">/bayes-lessons-setup</a>。'
+            f'本库的元数据框架是同目录 template.md，入口说明是 Agents.md。')
 
 
 def label_hit(label, row):
@@ -849,6 +925,7 @@ def render_html(rows, cabinets, title):
         "TITLE": html.escape(title), "LAYOUT": "" if items else " single",
         "NAV": '<nav class="taglist" aria-label="柜子">' + "".join(nav) + "</nav>" if items else "",
         "BAGS": bags, "RULES": "\n".join(rules),
+        "FOLLOW": follow_html(),
     }
     page = EXPORT_TEMPLATE.read_text(encoding="utf-8")
     for key, value in slots.items():

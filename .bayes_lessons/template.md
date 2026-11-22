@@ -1,5 +1,17 @@
 # 贝叶斯思维的元数据 · Nicole × flow_coding
 
+> 🧭 **先照技能做（任何 agent 读到这里都一样）**：这一份库是 agent 技能建立的。具体工作怎么进行，以 flow_coding 仓库里的两份 agent 技能为准：
+> - 每一轮工作（recall / note / link / review / doctor），照 [`/bayes-lessons`](file:///Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons/SKILL.md) 做，路径 `/Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons/SKILL.md`；
+> - 启用、重建、补框架、迁移，照 [`/bayes-lessons-setup`](file:///Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons-setup/SKILL.md) 做，路径 `/Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons-setup/SKILL.md`。
+> - 脚本：`python3 /Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons/scripts/bayes.py`。
+>
+> 本文件由 setup 按骨架 [`templates/template.md`](file:///Users/nicole/workspace/github/a476678244/flow_coding/skills/bayes-lessons-setup/templates/template.md) 生成，生成记录在 `meta.json` 的 `template_from`；同目录的 `Agents.md` 是给 agent 的入口说明。
+
+> 🔒 **本文件不可改。** 它是本库的元数据框架，规定什么算数据、放哪个柜、什么时候记；它不是记事本。
+> - 工作中学到的新东西——包括关于 Nicole 的称呼、偏好、纠正、决定——一律**记成数据**：`note --human --quote "她的原话"` 或 `note --file … --quote …`。不要写进本文件。
+> - 只有 Nicole 明确说「改 template / 改框架」时才改。改完跑 `bayes.py template --approve --quote "她的原话"`，脚本会记一块 `Nicole/决定`、更新 `meta.json` 的 `template_sha256`，并把本文件设为只读。
+> - 没经批准的改动，`recall` 会报 `hint_template_changed`，`doctor` 会报 `template.changed`。遇到时先恢复本文件，再把那条新内容记成数据。
+
 > 本文件是**元数据**：告诉 agent 在这个仓库里什么算数据、放进哪个柜、什么时候记。它本身不是石头，不能当出处。
 > 数据只在同目录 `brain.jsonl`。柜子的机器清单在 `cabinets.json`，和第 4 节保持一致。
 > 粒度是「Nicole + flow_coding」：这里的事实和认知只属于这一份库，别的仓库可以不同。

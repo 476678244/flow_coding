@@ -6,4 +6,4 @@
 | [user-guide.md](user-guide.md) | 记什么、第一次启用、每一轮、命令速查、拒绝原因、文件位置、当前状态、验证命令 |
 | [roadmap.md](roadmap.md) | 现在要定的、近期、中期、远期、已知限制 |
 
-门闩：`pytest features/bayes-lessons` 59 passed（见 [../acceptance.md](../acceptance.md)）。
+门闩：`pytest features/bayes-lessons` 60 passed（见 [../acceptance.md](../acceptance.md)）。

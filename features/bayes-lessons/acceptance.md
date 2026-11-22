@@ -1,6 +1,6 @@
 # acceptance · bayes-lessons v2
 
-合同见 [Index.md](Index.md)。只列 keep，2026-11-22 `pytest features/bayes-lessons` 59 passed 后勾选。
+合同见 [Index.md](Index.md)。只列 keep，2026-11-22 `pytest features/bayes-lessons` 60 passed 后勾选。
 
 - [x] keep · 未知动词 `unknown-verb`；非 git 目录 `recall` 不建任何目录
 - [x] keep · `note` 的标签必须属于已登记的柜子，否则 `unknown-cabinet`；柜子在哪一处登记，石头就进哪一处
@@ -28,4 +28,7 @@
 - [x] keep · 第一性原理（共同成长，谁都不落下）：`admission = co-built` 的库拒绝普通素材（`not-co-built`），收 `--human`、`cobuilt` 共建记录、带 `--discussed` 的素材；必须 `--grows`（`no-grows` / `bad-grows`）；别名算 human
 - [x] keep · `recall` 报 `growth`；最近 5 块只有一边在长时给 `hint_balance`，另一边补上后消失
 - [x] keep · setup `--admission co-built --cobuilt … --alias …` 写进 meta.json；template.md 有「谁都不落下」
+- [x] keep · 别的 agent 只看到库也知道照哪份技能做：setup 生成 `.bayes_lessons/Agents.md`、template 开头 🧭 块、meta.json `skills`、页面顶部链接，都指向 flow_coding 的 /bayes-lessons 与 /bayes-lessons-setup
+- [x] keep · template.md 由 setup 生成，开头 🧬 链回 setup 技能、骨架、/bayes-lessons、bayes.py；meta.json 记 template_from
+- [x] keep · template.md 是锁住的元数据：`template --approve --quote` 记一块 Nicole/决定、写 sha256、设只读；未批准的改动在 recall（`hint_template_changed`）、note（`warning`）、doctor（`template.changed`）里报出
 - [x] keep · setup 拒绝别人的仓库；自己的仓库写 cabinets.json、页面、启用说明，生成填好 person/repo 的 template.md、预置 Nicole 柜，报告 needs_migration；再跑 dry-run 无可写

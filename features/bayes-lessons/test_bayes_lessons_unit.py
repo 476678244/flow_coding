@@ -225,6 +225,7 @@ def test_export_page_shows_cabinets_links_and_lost(env):
     assert "贝叶斯大脑 · Nicole × repo" in page and ">A股<" in page and ">A股/两融<" in page
     assert 'data-testid="link"' in page and "不作先验" in page
     assert 'data-testid="lost"' in page
+    assert 'data-testid="follow"' in page and "bayes-lessons/SKILL.md" in page
     assert "@@" not in page
 
 
@@ -339,7 +340,7 @@ def test_recall_points_to_template_until_filled(env):
     (env["repo"] / ".bayes_lessons" / "template.md").write_text("## 1\n<填：一句话>\n", encoding="utf-8")
     assert "<填>" in run(env, "recall")[1]["hint_template"]
     (env["repo"] / ".bayes_lessons" / "template.md").write_text("## 1\n市场里正在起作用的事件\n", encoding="utf-8")
-    assert "hint_template" not in run(env, "recall")[1]
+    assert "还没上锁" in run(env, "recall")[1]["hint_template"]
 
 
 def co_built(env, patterns=("wiki/laolao/weekly_readings/*",)):
@@ -397,6 +398,26 @@ def test_setup_writes_admission_into_meta(tmp_path):
     assert "谁都不落下" in (tmp_path / ".bayes_lessons" / "template.md").read_text(encoding="utf-8")
 
 
+def test_template_is_locked_metadata(env):
+    cabinets(env)
+    frame = env["repo"] / ".bayes_lessons" / "template.md"
+    frame.write_text("# 框架\n## 1\n市场里正在起作用的事件\n", encoding="utf-8")
+    assert "还没上锁" in run(env, "recall")[1]["hint_template"]
+    assert run(env, "template", "--approve")[1]["reason"] == "no-quote"
+    code, body = run(env, "template", "--approve", "--quote", "template 不能改")
+    assert code == 0 and body["status"] == "locked" and body["stone"]
+    assert not (frame.stat().st_mode & 0o222)
+    over = run(env, "recall")[1]
+    assert over["template_locked"] is True and "hint_template" not in over and "hint_template_changed" not in over
+    fact = run(env, "recall", "--tag", "Nicole")[1]["facts"][0]
+    assert fact["source"]["quote"] == "template 不能改" and "批准" in fact["claim"]
+    frame.chmod(0o644)
+    frame.write_text(frame.read_text(encoding="utf-8") + "三个称呼：nicole / Zonghan / laolao\n", encoding="utf-8")
+    assert "没有经过" in run(env, "recall")[1]["hint_template_changed"]
+    assert run(env, "doctor")[1]["template"]["changed"] is True
+    assert "warning" in note_a(env)[1]
+
+
 def test_repo_dir_can_be_a_trial_folder(env):
     trial = {"BAYES_REPO_DIR": ".bayes_lessons_template"}
     (env["repo"] / ".bayes_lessons_template").mkdir()
@@ -413,7 +434,7 @@ def test_skill_states_the_loop():
     for phrase in ("recall --tag", "--quote", "--human", "link", "links_not_prior", "不当先验", "整柜", "--overturns", "doctor", "review",
                    "格物", "致知", "七彩", "小乌龟", "flomo", "先点标签", "推送", "金字塔", "--when", "colorful", "to_verify", "lonely_subtags",
                    "具体事件数据", "meta-source", "no-when", "元数据", "template.md", "--commit", "一个人 + 一个仓库",
-                   "谁都不落下", "co-built", "--grows", "--discussed", "hint_balance"):
+                   "谁都不落下", "co-built", "--grows", "--discussed", "hint_balance", "template --approve", "hint_template_changed"):
         assert phrase in text, phrase
     setup = SETUP_SKILL.read_text(encoding="utf-8")
     for phrase in ("cabinets", "柜子", "needs_migration", "migrate_v1.py", "template.md", "元数据框架", "--admission co-built", "--cobuilt"):
@@ -421,7 +442,8 @@ def test_skill_states_the_loop():
 
 
 def setup_run(path, *args):
-    proc = subprocess.run([sys.executable, str(SETUP), *args], cwd=path, capture_output=True, text=True)
+    proc = subprocess.run([sys.executable, str(SETUP), *args], cwd=path, capture_output=True, text=True,
+                          env={**os.environ, "BAYES_INSTANCES": str(path.parent / f"{path.name}-instances.json")})
     return proc.returncode, json.loads(proc.stdout)
 
 
@@ -448,6 +470,16 @@ def test_setup_opens_owned_repo_and_reports_migration(tmp_path):
     assert [c["name"] for c in json.loads((tmp_path / ".bayes_lessons" / "cabinets.json").read_text(encoding="utf-8"))] == ["Nicole"]
     frame = (tmp_path / ".bayes_lessons" / "template.md").read_text(encoding="utf-8")
     assert "Nicole × " in frame and "<填" in frame and "@@" not in frame
+    assert "bayes-lessons-setup/SKILL.md" in frame and "bayes-lessons/SKILL.md" in frame and "templates/template.md" in frame
+    meta = json.loads((tmp_path / ".bayes_lessons" / "meta.json").read_text(encoding="utf-8"))
+    assert meta["template_from"]["skill"].endswith("bayes-lessons-setup/SKILL.md") and len(meta["template_from"]["skeleton_sha256"]) == 64
+    guide = (tmp_path / ".bayes_lessons" / "Agents.md").read_text(encoding="utf-8")
+    assert "skills/bayes-lessons/SKILL.md" in guide and "skills/bayes-lessons-setup/SKILL.md" in guide and "@@" not in guide
+    assert "先照技能做" in frame
+    assert meta["skills"]["daily"].endswith("skills/bayes-lessons/SKILL.md") and meta["skills"]["setup"].endswith("skills/bayes-lessons-setup/SKILL.md")
+    registry = Path(body["registered"])
+    assert registry.parent == tmp_path.parent and registry.name.endswith("-instances.md")
+    assert str(tmp_path / ".bayes_lessons" / "template.md") in registry.read_text(encoding="utf-8")
     assert (tmp_path / ".bayes_lessons" / "index.html").is_file()
     assert "recall --tag" in (tmp_path / "Agents.md").read_text(encoding="utf-8")
     assert "bayes-lessons v2" in (tmp_path / "Index.md").read_text(encoding="utf-8")
